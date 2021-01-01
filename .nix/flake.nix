@@ -13,9 +13,9 @@
 
         hpkgs = pkgs.haskell.packages.ghc966;
 
-        iosevka-custom = pkgs.callPackage ./.nix/iosevka.nix {};
+        iosevka-custom = pkgs.callPackage ./iosevka.nix {};
         
-        executable = hpkgs.callPackage ./.nix/builder.nix {};
+        executable = hpkgs.callPackage ./builder.nix {};
 
         runner = pkgs.writeShellApplication {
           name = "ef5-runner";
@@ -49,7 +49,7 @@
         website = pkgs.stdenv.mkDerivation {
           name = "ef5.ch";
           buildInputs = [ ];
-          src = pkgs.nix-gitignore.gitignoreSourcePure ./.gitignore ./.;
+          src = pkgs.nix-gitignore.gitignoreSourcePure ../.gitignore ../.;
 
           # https://github.com/rpearce/hakyll-nix-template/blob/3d0e857197bed3ffd77f36233452e8eea279c64b/flake.nix#L64
           LANG = "en_US.UTF-8";
