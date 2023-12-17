@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="{% block html_lang %}{{ page.lang }}{% endblock html_lang %}">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0" />
+    <title>{% block title %}{{ page.title }}{%endblock%}</title>
+
+    <link rel="stylesheet" href="/css/main.css"/>
+    <link rel="stylesheet" href="/css/fonts.css"/>
+    
+    <!-- KaTeX support -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+</head>
+<body>
+  <div class="content">
+  <header>
+    <div class="site-title">
+        <a href="/">{{ site.name }}</a>
+    </div>
+    <nav style="display: flex; gap: 0.5em; text-align: center;">
+        {% for title, link in site.menu.items.items() %}
+          <a href="{{ link }}">{{ title }}</a>
+        {% endfor %}
+        <div class="separator" style="display: flex;"></div>
+        {% for name, link in socials.items() %}
+          <a href="{{ link }}" style="display: flex;"><img src="/icons/{{ name }}.svg" alt="{{ name }}"></a>
+        {% endfor %}
+    </nav>
+  </header>
+  <main>
+    <section id="content" class="body">
+      <h1 class="title">{{ page.title }}</h1>
+      {% block content %}
+      {% endblock %}
+    </section>
+  </main>
+  <footer>
+    <a href="{{ site.repo }}">Sources</a>
+    <div class="separator"></div>
+    {{ date }}
+  </footer>
+  </div>
+</body>
+</html>

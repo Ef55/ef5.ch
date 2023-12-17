@@ -1,0 +1,13 @@
+@font-face {
+  font-display: swap;
+  font-family: 'Fira Code';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Fira Code'), local('FiraCode-Regular'),
+    url('/fonts/woff2/FiraCode-Regular.woff2') format('woff2'),
+    /* Super Modern Browsers */
+    url('/fonts/woff/FiraCode-Regular.woff') format('woff'),
+    /* Modern Browsers */
+    url('/fonts/ttf/FiraCode-Regular.ttf') format('truetype'),
+    /* Safari, Android, iOS */
+}
