@@ -1,3 +1,4 @@
 .bsp/
 .build/
+.site/
 .scala-build

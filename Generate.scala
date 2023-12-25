@@ -119,7 +119,7 @@ def main(args: String*) = {
   val baseUrl = "https://ef5.ch"
   val contentDir = os.pwd / "content"
   val staticDir = os.pwd / "static"
-  val outDir = os.pwd / ".build"
+  val outDir = os.pwd / ".site"
   val deployer = Deployer()
 
   os.remove.all(outDir)
