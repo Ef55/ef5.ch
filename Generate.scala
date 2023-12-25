@@ -90,9 +90,12 @@ class Server(val root: os.Path) extends cask.MainRoutes {
 
   @cask.get("/", subpath = true)
   def get(request: cask.Request) = {
-    val path = os.SubPath(request.remainingPathSegments.mkString("/"))
+    val path = {
+      val path = os.SubPath(request.remainingPathSegments.mkString("/"))
+      if path.ext == "" then path / "index.html" else path
+    }
     val contentType = path.ext match {
-      case "" | "html" => "text/html"
+      case "html" => "text/html"
       case "css" => "text/css"
       case "svg" => "image/svg+xml"
       case _ => "text/plain"
