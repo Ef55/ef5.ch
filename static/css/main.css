@@ -183,12 +183,10 @@ h6::before {
   font-weight: lighter;
 }
 
-.metadata td {
-  border-style: none;
-}
-
 /* Footer */
 footer {
+  color: gray;
+  font-weight: lighter;
   display: flex;
   justify-content: center;
   border-top: 0.05rem solid var(--bordercl);

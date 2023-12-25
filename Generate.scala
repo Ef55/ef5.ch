@@ -18,7 +18,64 @@ def walkFiles(root: os.Path) = {
   }
 }
 
-def markdownToHtml(content: String): (String, Map[String, List[String]]) = {
+def getGitContext(root: os.Path, path: os.SubPath): Context = {
+  import scala.language.implicitConversions
+  val output = os.proc("git", "rev-list", "-1", "--pretty=format:%h %ad", "--date=short", "HEAD", "--", root / path).call(cwd = root).out.lines().toList
+  output match {
+    case  s"commit ${commit}" ::
+          s"${abrCommit} ${year}-${month}-${day}" ::
+          nil =>  Context("hash" -> commit, "abbreviated_hash" -> abrCommit, "date" -> s"${day}.${month}.${year}")
+    case _ => throw new RuntimeException(s"Unexpected git output:\n${output}")
+  }
+}
+
+sealed trait Context {
+  def toJavaValue: Object = {
+    this match {
+      case Struct(m) => m.view.mapValues(_.toJavaValue).toMap.asJava
+      case StringValue(v) => v
+      case BooleanValue(v) => Boolean.box(v)
+    }
+  }
+  def toJavaMap: java.util.Map[String, Object] = {
+    this match {
+      case Struct(m) => m.view.mapValues(_.toJavaValue).toMap.asJava
+      case _ => java.util.Map.of()
+    }
+  }
+
+  def meld (that: Context): Context = {
+    (this, that) match {
+      case (Struct(m1), Struct(m2)) =>
+        Struct(m1.foldLeft(m2)( (c, p) => {
+          val (k, v1) = p
+          c.updatedWith(k)(mv2 => {
+            mv2 match {
+              case Some(v2) => Some(v1.meld(v2))
+              case None => Some(v1)
+            }
+          })
+        }))
+      case _ => throw new java.lang.RuntimeException(s"Cannot meld contexts: types are ${this.getClass} and ${that.getClass}.")
+    }
+  }
+}
+case class Struct(m: Map[String, Context]) extends Context 
+case class StringValue(v: String) extends Context
+case class BooleanValue(v: Boolean) extends Context
+given Conversion[String, Context] with {
+  def apply(v: String) = StringValue(v)
+}
+given Conversion[Boolean, Context] with {
+  def apply(v: Boolean) = BooleanValue(v)
+}
+object Context {
+  def apply(ls: (String, Context)*) = {
+    Struct(Map(ls: _*))
+  }
+}
+
+def markdownToHtml(content: String): (String, Context) = {
   import scala.jdk.CollectionConverters.*
   import org.commonmark.node.*
   import org.commonmark.parser.Parser
@@ -37,7 +94,12 @@ def markdownToHtml(content: String): (String, Map[String, List[String]]) = {
   val parsed = parser.parse(content)
   val metadata = YamlFrontMatterVisitor()
   parsed.accept(metadata)
-  (renderer.render(parsed), metadata.getData.asScala.view.mapValues(_.asScala.toList).toMap)
+
+  val metadataCtx = Context(
+    "page" -> Struct(metadata.getData.asScala.view.mapValues(e => StringValue(e.asScala.mkString("|"))).toMap)
+  )
+
+  (renderer.render(parsed), metadataCtx)
 }
 
 def injectIn(content: String, template: String) = {
@@ -49,40 +111,14 @@ def injectIn(content: String, template: String) = {
   """
 }
 
-sealed trait Context {
-  def toJavaValue: Object = {
-    this match {
-      case Struct(m) => m.view.mapValues(_.toJavaValue).toMap.asJava
-      case Value(v) => v
-    }
-  }
-  def toJavaMap: java.util.Map[String, Object] = {
-    this match {
-      case Struct(m) => m.view.mapValues(_.toJavaValue).toMap.asJava
-      case Value(v) => java.util.Map.of()
-    }
-  }
-}
-case class Struct(m: Map[String, Context]) extends Context 
-case class Value(v: String) extends Context
-given Conversion[String, Context] with {
-  def apply(v: String) = Value(v)
-}
-object Context {
-  def apply(ls: (String, Context)*) = {
-    Struct(Map(ls: _*))
-  }
-}
-
 class Deployer {
   private val jinjava = new Jinjava();
   jinjava.setResourceLocator(loader.FileLocator(File("template")))
 
-  def apply(input: String, ctx: Map[String, List[String]] => Struct): String = {
-
+  def apply(input: String, ctx: Context): String = {
     val (content, metadata) = markdownToHtml(input)
     val template = injectIn(content, "page.html")
-    jinjava.render(template, ctx(metadata).toJavaMap)
+    jinjava.render(template, ctx.meld(metadata).toJavaMap)
   }
 }
 
@@ -125,29 +161,31 @@ def main(args: String*) = {
   os.remove.all(outDir)
 
   walkFiles(contentDir).filter(_.last == "_.md").foreach{path =>
-    val relative = path.relativeTo(contentDir) / os.up
+    val relativeOriginal = path.subRelativeTo(contentDir)
+    val relative = relativeOriginal / os.up
     val input = os.read(path)
 
     import scala.language.implicitConversions
-    val cal = java.util.Calendar.getInstance()
-    val ctx: Map[String, List[String]] => Struct = metadata => Context(
-      "date" -> s"${cal.get(java.util.Calendar.DATE)}.${cal.get(java.util.Calendar.MONTH) + 1}.${cal.get(java.util.Calendar.YEAR)}",
+    val ctx = Context(
       "socials" -> Context(
         "Github" -> "https://github.com/Ef55"
       ),
       "site" -> Context(
         "url" -> baseUrl,
         "name" -> "Noé De Santo",
-        "repo" -> "https://github.com/Ef55/website",
+        "repo" -> "https://github.com/Ef55/ef5.ch",
         "menu" -> Context(
           "items" -> Context(
             "About me" -> s"/",
           )
         ),
+        "enable_katex" -> false,
+        "git" -> getGitContext(contentDir, os.sub),
       ),
       "page" -> Context(
-        "title" -> metadata.getOrElse("title", List.empty).mkString("|"),
-      )
+        "path" -> relative.toString,
+        "git" -> getGitContext(contentDir, relativeOriginal),
+      ),
     )
 
     val output = deployer(input, ctx)
