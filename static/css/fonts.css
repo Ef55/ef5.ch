@@ -4,10 +4,10 @@
   font-style: normal;
   font-weight: 400;
   src: local('Fira Code'), local('FiraCode-Regular'),
-    url('/fonts/woff2/FiraCode-Regular.woff2') format('woff2'),
     /* Super Modern Browsers */
-    url('/fonts/woff/FiraCode-Regular.woff') format('woff'),
+    url('/fonts/FiraCode/woff2/FiraCode-Regular.woff2') format('woff2'),
     /* Modern Browsers */
-    url('/fonts/ttf/FiraCode-Regular.ttf') format('truetype'),
+    url('/fonts/FiraCode/woff/FiraCode-Regular.woff') format('woff'),
     /* Safari, Android, iOS */
+    url('/fonts/FiraCode/ttf/FiraCode-Regular.ttf') format('truetype'),
 }
