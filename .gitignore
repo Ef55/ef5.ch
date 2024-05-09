@@ -1,4 +1,6 @@
 .bsp/
 .build/
 .site/
-.scala-build
+.scala-build/
+.metals/
+.vscode/

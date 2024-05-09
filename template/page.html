@@ -7,11 +7,16 @@
 
     <link rel="stylesheet" href="/css/main.css"/>
     <link rel="stylesheet" href="/css/fonts.css"/>
+    {% if page.stylesheet is defined %}
+    <link rel="stylesheet" href="/css/{{ page.stylesheet }}"/>
+    {% endif %}
     
     {% if site.enable_katex %}
     <!-- KaTeX support -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
     {% endif %}
+
+    <style>{% block style %} {% endblock %}</style>
   </head>
 <body>
   <div class="content">
@@ -22,6 +27,7 @@
     <nav style="display: flex; gap: 0.5em; text-align: center;">
         {% for title, link in site.menu.items.items() %}
           <a href="{{ link }}">{{ title }}</a>
+          {{ "•" if not loop.last else "" }}
         {% endfor %}
         <div class="separator" style="display: flex;"></div>
         {% for name, link in socials.items() %}
@@ -31,7 +37,7 @@
   </header>
   <main>
     <section id="content" class="body">
-      <h1 class="title", style="margin-bottom: 0;">{{ page.title }}</h1>
+      <h1 class="title" style="margin-bottom: 0;">{{ page.title }}</h1>
 
       <div class="metadata">
         {% if page.enable_git %}
