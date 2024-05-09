@@ -1,8 +1,10 @@
-//> using lib "org.commonmark:commonmark:0.21.0"
-//> using lib "org.commonmark:commonmark-ext-yaml-front-matter:0.21.0"
-//> using lib "com.hubspot.jinjava:jinjava:2.7.1"
-//> using lib "com.lihaoyi::os-lib:0.9.2"
-//> using lib "com.lihaoyi::cask:0.9.1"
+#!/usr/bin/env scala-cli
+
+//> using lib "org.commonmark:commonmark:0.22.0"
+//> using lib "org.commonmark:commonmark-ext-yaml-front-matter:0.22.0"
+//> using lib "com.hubspot.jinjava:jinjava:2.7.2"
+//> using lib "com.lihaoyi::os-lib:0.10.0"
+//> using lib "com.lihaoyi::cask:0.9.2"
 
 import scala.io.Source
 import scala.collection.immutable.Map
@@ -11,6 +13,7 @@ import java.io.File
 import com.hubspot.jinjava.*
 import java.nio.file.{Paths, Files}
 import java.nio.charset.StandardCharsets
+import scala.annotation.targetName
 
 def walkFiles(root: os.Path) = {
   os.walk.stream.attrs(root, includeTarget = true).collect{
@@ -25,6 +28,7 @@ def getGitContext(root: os.Path, path: os.SubPath): Context = {
     case  s"commit ${commit}" ::
           s"${abrCommit} ${year}-${month}-${day}" ::
           nil =>  Context("hash" -> commit, "abbreviated_hash" -> abrCommit, "date" -> s"${day}.${month}.${year}")
+    case Nil => Context("hash" -> "0000000000000000000000000000000000000000", "abbreviated_hash" -> "0000000", "date" -> s"01.01.1970")
     case _ => throw new RuntimeException(s"Unexpected git output:\n${output}")
   }
 }
@@ -59,6 +63,33 @@ sealed trait Context {
       case _ => throw new java.lang.RuntimeException(s"Cannot meld contexts: types are ${this.getClass} and ${that.getClass}.")
     }
   }
+
+  def add(path: String*)(v: Context): Context = {
+    this.meld(Context.singleton(path: _*)(v))
+  }
+  def addIfMissing(path: String*)(v: Context): Boolean = {
+    contains(path: Seq[String])
+  }
+  @targetName("addIfMissingSeq")
+  def addIfMissing(path: Seq[String])(v: Context): Boolean = {
+    (this, path) match {
+      case (Struct(m), h +: t) if m.contains(h) => m(h).contains(t)
+      case (Struct(m), h +: t) if !m.contains(h) => m(h).contains(t)
+      case _ => throw new java.lang.RuntimeException(s"")
+    }
+  }
+
+  def contains(path: String*): Boolean = {
+    contains(path: Seq[String])
+  }
+  @targetName("containsSeq")
+  def contains(path: Seq[String]): Boolean = {
+    (this, path) match {
+      case (Struct(m), h +: t) if m.contains(h) => m(h).contains(t)
+      case (_, Seq()) => true
+      case _ => false
+    }
+  }
 }
 case class Struct(m: Map[String, Context]) extends Context 
 case class StringValue(v: String) extends Context
@@ -70,6 +101,10 @@ given Conversion[Boolean, Context] with {
   def apply(v: Boolean) = BooleanValue(v)
 }
 object Context {
+  def singleton(path: String*)(v: Context): Context = {
+    path.foldRight(v)((h, v) => Struct(Map(h -> v)))
+  }
+
   def apply(ls: (String, Context)*) = {
     Struct(Map(ls: _*))
   }
@@ -115,35 +150,52 @@ class Deployer {
   private val jinjava = new Jinjava();
   jinjava.setResourceLocator(loader.FileLocator(File("template")))
 
-  def apply(input: String, ctx: Context): String = {
-    val (content, metadata) = markdownToHtml(input)
-    val template = injectIn(content, "page.html")
-    jinjava.render(template, ctx.meld(metadata).toJavaMap)
+  lazy val handlers: Map[String, (String, Context) => String] = Map(
+    "md" -> ((input, ctx0) => {
+      val (content, metadata) = markdownToHtml(input)
+      val mdCtx = Context(
+        "page" -> Context(
+          "stylesheet" -> StringValue("md.css"),
+        )
+      )
+      val ctx = ctx0.meld(metadata).meld(mdCtx)
+      val template = injectIn(content, "page.html")
+      handle("html")(template, ctx)
+    }),
+    "html" -> ((input, ctx) => {
+      jinjava.render(input, ctx.toJavaMap)
+    })
+  )
+
+  def handles(kind: String): Boolean = {
+    handlers.contains(kind)
   }
+
+  def handle(kind: String)(input: String, ctx: Context): String = handlers(kind)(input, ctx)
 }
 
-class Server(val root: os.Path) extends cask.MainRoutes {
+class Server(val static: Map[os.SubPath, os.Path], val dynamic: Map[os.SubPath, Unit => String]) extends cask.MainRoutes {
 
   @cask.get("/", subpath = true)
-  def get(request: cask.Request) = {
+  def get(request: cask.Request): cask.Response[Array[Byte]] = {
     val path = {
       val path = os.SubPath(request.remainingPathSegments.mkString("/"))
       if path.ext == "" then path / "index.html" else path
     }
     val contentType = path.ext match {
-      case "html" => "text/html"
-      case "css" => "text/css"
+      case "html" => "text/html; charset=utf-8"
+      case "css" => "text/css; charset=utf-8"
       case "svg" => "image/svg+xml"
-      case _ => "text/plain"
+      case "ttf" | "woff" | "woff2" => s"font/${path.ext}"
+      case _ => "text/plain; charset=utf-8"
     }
-    try {
-      cask.Response(
-        data = os.read(root / path),
-        headers = Seq("Content-Type" -> s"${contentType}; charset=utf-8")
-      )
-    }
-    catch {
-      _ => cask.Response("", statusCode = 404)
+    val mData: Option[Array[Byte]] = dynamic.get(path).map(_.apply(()).getBytes).orElse(static.get(path).map(os.read.bytes(_)))
+    mData match {
+      case None => cask.Response(Array.empty, statusCode = 404)
+      case Some(data) => cask.Response(
+          data = data,
+          headers = Seq("Content-Type" -> contentType)
+        )
     }
   }
 
@@ -155,50 +207,69 @@ def main(args: String*) = {
   val baseUrl = "https://ef5.ch"
   val contentDir = os.pwd / "content"
   val staticDir = os.pwd / "static"
-  val outDir = os.pwd / ".site"
   val deployer = Deployer()
 
-  os.remove.all(outDir)
+  val dynamic: Seq[(os.SubPath, Unit => String)] = walkFiles(contentDir)
+    .filter(path => path.baseName == "_" && deployer.handles(path.ext))
+    .map{path =>
+      val relativeOriginal = path.subRelativeTo(contentDir)
+      val relative = relativeOriginal / os.up
 
-  walkFiles(contentDir).filter(_.last == "_.md").foreach{path =>
-    val relativeOriginal = path.subRelativeTo(contentDir)
-    val relative = relativeOriginal / os.up
-    val input = os.read(path)
-
-    import scala.language.implicitConversions
-    val ctx = Context(
-      "socials" -> Context(
-        "Github" -> "https://github.com/Ef55"
-      ),
-      "site" -> Context(
-        "url" -> baseUrl,
-        "name" -> "Noé De Santo",
-        "repo" -> "https://github.com/Ef55/ef5.ch",
-        "menu" -> Context(
-          "items" -> Context(
-            "About me" -> s"/",
-          )
+      import scala.language.implicitConversions
+      val ctx = Context(
+        "socials" -> Context(
+          "Github" -> "https://github.com/Ef55"
         ),
-        "enable_katex" -> false,
-        "git" -> getGitContext(contentDir, os.sub),
-      ),
-      "page" -> Context(
-        "path" -> relative.toString,
-        "git" -> getGitContext(contentDir, relativeOriginal),
-      ),
-    )
+        "site" -> Context(
+          "url" -> baseUrl,
+          "name" -> "Noé De Santo",
+          "repo" -> "https://github.com/Ef55/ef5.ch",
+          "menu" -> Context(
+            "items" -> Context(
+              "About me" -> "/me",
+              "CV" -> "/cv",
+            )
+          ),
+          "enable_katex" -> false,
+          "git" -> getGitContext(contentDir, os.sub),
+        ),
+        "page" -> Context(
+          "path" -> relative.toString,
+          "git" -> getGitContext(contentDir, relativeOriginal),
+        ),
+      )
 
-    val output = deployer(input, ctx)
-    os.write(outDir / relative / "index.html", output, createFolders = true)
+      val generate = (_: Unit) => {
+        val input = os.read(path)
+        deployer.handle(path.ext)(input, ctx)
+      }
+      (relative / "index.html", generate)
+    }
+    .toSeq
+
+  val static: Seq[(os.SubPath, os.Path)] = walkFiles(staticDir)
+    .map{path =>
+      val relative = path.subRelativeTo(staticDir)
+      (relative, path)
+    }
+    .toSeq
+
+  if (args.length == 0 || (args.length == 1 && args(0) == "deploy")) {
+    val outDir = os.pwd / ".site"
+    os.remove.all(outDir)
+
+    dynamic.foreach{ (path, generator) =>
+      os.write(outDir / path, generator(()), createFolders = true)
+    }
+    static.foreach{ (path, source) =>
+      os.copy(source, outDir / path, createFolders = true)
+    }
   }
-
-  walkFiles(staticDir).foreach{path =>
-    val relative = path.relativeTo(staticDir)
-    os.copy(path, outDir / relative, createFolders = true)
-  }
-
-  if (args.length > 0 && args(0) == "server") {
-    val server = Server(outDir)
+  else if (args.length == 1 && args(0) == "server") {
+    val server = Server(static.toMap, dynamic.toMap)
     server.main(Array.empty)
+  }
+  else {
+    println("Invalid arguments: " + args.mkString(" "))
   }
 }
