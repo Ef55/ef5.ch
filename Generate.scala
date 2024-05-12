@@ -1,10 +1,10 @@
 #!/usr/bin/env scala-cli
 
-//> using lib "org.commonmark:commonmark:0.22.0"
-//> using lib "org.commonmark:commonmark-ext-yaml-front-matter:0.22.0"
-//> using lib "com.hubspot.jinjava:jinjava:2.7.2"
-//> using lib "com.lihaoyi::os-lib:0.10.0"
-//> using lib "com.lihaoyi::cask:0.9.2"
+//> using dep "org.commonmark:commonmark:0.22.0"
+//> using dep "org.commonmark:commonmark-ext-yaml-front-matter:0.22.0"
+//> using dep "com.hubspot.jinjava:jinjava:2.7.2"
+//> using dep "com.lihaoyi::os-lib:0.10.0"
+//> using dep "com.lihaoyi::cask:0.9.2"
 
 import scala.io.Source
 import scala.collection.immutable.Map
@@ -65,7 +65,7 @@ sealed trait Context {
   }
 
   def add(path: String*)(v: Context): Context = {
-    this.meld(Context.singleton(path: _*)(v))
+    this.meld(Context.singleton(path*)(v))
   }
   def addIfMissing(path: String*)(v: Context): Boolean = {
     contains(path: Seq[String])
@@ -106,7 +106,7 @@ object Context {
   }
 
   def apply(ls: (String, Context)*) = {
-    Struct(Map(ls: _*))
+    Struct(Map(ls*))
   }
 }
 
@@ -270,6 +270,8 @@ def main(args: String*) = {
     server.main(Array.empty)
   }
   else {
-    println("Invalid arguments: " + args.mkString(" "))
+    val argsString = args.mkString(" ")
+    val output = if argsString.isEmpty then "<empty>" else argsString
+    println("Invalid arguments: " + output)
   }
 }

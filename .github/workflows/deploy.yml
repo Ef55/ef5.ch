@@ -23,7 +23,7 @@ jobs:
         id: pages
         uses: actions/configure-pages@v3
       - name: Build website
-        run: scala-cli Generate.scala -- deploy
+        run: scala-cli run Generate.scala
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
