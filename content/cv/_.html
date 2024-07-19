@@ -1,5 +1,7 @@
 {% extends "page.html" %}
 
+{% block title %}Curriculum Vitae — Noé De Santo{%endblock%}
+
 {% block style %}
 .line > span:last-child {
   float: right;
@@ -70,12 +72,48 @@ ul {
 <div>
   <h2 class="header">Publications</h2>
 
-  <h3>Drafts</h3>
-  <div>
-    De Santo, Noé, Aurèle Barrière, and Clément Pit-Claudel.<br>
-    "A Coq Mechanization of JavaScript Regular Expression Semantics."<br>
-    <i>arXiv preprint <a href="https://arxiv.org/abs/2403.11919">arXiv:2403.11919</a></i> (2024).
-  </div>
+  <article class="publication">
+    <header>
+      <span class="series">[ICFP'24]</span>
+      <cite class="title">
+        <a href="https://doi.org/10.48550/arXiv.2403.11919">A Coq Mechanization of JavaScript Regular Expression Semantics</a>
+      </cite>
+    </header>
+    <div class="metadata">
+      <div class="authors">
+        <span class="author hg">Noé De Santo</span>, 
+        <span class="author">Aurèle Barrière</span>, 
+        <span class="author">Clément Pit-Claudel</span>
+      </div>
+    </div>
+    <details>
+      <summary>Abstract</summary>
+      <div  class="abstract">
+        <p>We present an executable, proven-safe, faithful, and future-proof Coq mechanization of JavaScript regular expression (regex) matching, as specified by the last published edition of ECMA-262 section 22.2. This is, to our knowledge, the first time that an industrial-strength regex language has been faithfully mechanized in an interactive theorem prover. We highlight interesting challenges that arose in the process (including issues of encoding, corner cases, and executability), and we document the steps that we took to ensure that the result is straightforwardly auditable and that our understanding of the spec aligns with existing implementations.</p>
+        <p>We demonstrate the usability and versatility of the mechanization through a broad collection of analyses, case studies, and experiments: we prove that JavaScript regex matching always terminates and is safe (no assertion failures); we identify subtle corner cases that led to mistakes in previous publications; we verify an optimization extracted from a state-of-the-art regex engine; we show that some classic properties described in automata textbooks and used in derivatives-based matchers do not hold in JavaScript regex; and we demonstrate that the cost of updating the mechanization to account for changes in the original specification is reasonably low.</p>
+        <p>Our mechanization can be extracted to OCaml and linked with Unicode libraries to produce an executable engine that passes the relevant parts of the official Test262 conformance test suite.</p>
+      </div>
+    </details>
+  </article>
+
+  <h3>Others</h3>
+
+  <article class="publication">
+    <header>
+      <span class="series">[PLDI'24 SRC]</span>
+      <cite class="title">
+        <a href="https://systemf.epfl.ch/posters/2024-warblre">Mechanized semantics for ECMAScript regexes</a>
+      </cite>
+    </header>
+    <div class="metadata">
+      <div class="authors">
+        <span class="author hg">Noé De Santo</span>
+      </div>
+      <div>
+        <span class="type">Poster</span>; <span class="award"><a href="https://pldi24.sigplan.org/track/pldi-2024-src#winners">1st place</a> (graduate category)</span>.
+      </div>
+    </div>
+  </article>
 </div>
 
 <!-- Research & Industry Experience -->
@@ -86,7 +124,7 @@ ul {
   <div>
     <div class="line">
       <span><b>"Master's Valorization"</b></span>
-      <span style="float: right"><b>March-&#8203;~July 2024</b></span>
+      <span style="float: right"><b>March-&#8203;July 2024</b></span>
     </div>
     <a href="https://systemf.epfl.ch/">System F</a> (EPFL), Switzerland.<br>
     Supervised by Dr. Aurèle Barrière & Prof. Clément Pit-Claudel.<br>

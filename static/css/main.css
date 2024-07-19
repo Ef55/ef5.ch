@@ -50,15 +50,12 @@ a {
 }
 
 a:hover {
-  /* background-color: #c7c7c7;
-  color: rgb(0, 0, 0); */
   color: var(--bordercl);
   text-decoration-color: var(--detonate);
-  text
 }
 
 /* Overall size of the content */
-.content {
+body {
   margin-bottom: 4em;
   margin-left: auto;
   margin-right: auto;
@@ -69,22 +66,22 @@ a:hover {
 }
 
 /* Headers */
-header {
+body > header {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   margin: 1em 0;
 }
 
-header .site-title {
+body > header .site-title {
   font-size: 1.5rem;
 }
 
-.title {
+.page-title {
   font-size: 1.45rem;
 }
 
-.title::before {
+.page-title::before {
   display: none;
 }
 
@@ -118,7 +115,7 @@ h6 {
   margin-top: 0.5em;
 }
 
-.metadata {
+main > .metadata {
   color: gray;
   font-weight: lighter;
 }
@@ -138,4 +135,24 @@ footer {
   margin-left: 0.75em;
   margin-right: 0.75rem;
   border: 1px solid;
+}
+
+/* Publications */
+.publication .series {
+  font-weight: 600;
+}
+.publication .title {
+  font-style: normal;
+  font-weight: 600;
+}
+.publication .metadata .author.hg {
+  font-weight: 500;
+}
+.publication .abstract {
+  margin-left: 0.5em;
+  padding-left: 0.5em;
+  border-left: var(--detonate) solid 1px;
+}
+.publication .abstract > p:first-child, .publication .abstract > p:last-child {
+  margin-bottom: 0;
 }
