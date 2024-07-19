@@ -3,7 +3,7 @@
 //> using dep "org.commonmark:commonmark:0.22.0"
 //> using dep "org.commonmark:commonmark-ext-yaml-front-matter:0.22.0"
 //> using dep "com.hubspot.jinjava:jinjava:2.7.2"
-//> using dep "com.lihaoyi::os-lib:0.10.0"
+//> using dep "com.lihaoyi::os-lib:0.10.2"
 //> using dep "com.lihaoyi::cask:0.9.2"
 
 import scala.io.Source
