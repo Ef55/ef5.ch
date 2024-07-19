@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mechanized semantics for ECMAScript regexes</title>
+
+    <link rel="stylesheet" href="/fonts/Iosevka/Iosevka.css">
+    <link rel="stylesheet" href="/fonts/FiraSans/FiraSans.css">
+    <link rel="stylesheet" href="external.css">
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css"
+          integrity="sha384-wcIxkf4k558AjM3Yz3BBFQUbk/zgIYC2R0QpeeYb+TwlBVMrlgLqwRjRtGZiK7ww"
+          crossorigin="anonymous">
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+            integrity="sha384-hIoBPJpTUs74ddyc4bFZSM1TVlQDA60VBbJS0oA934VSz82sBx1X7kSx2ATBDIyd"
+            crossorigin="anonymous"></script>
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+            integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk"
+            crossorigin="anonymous"
+            onload="renderMathInElement(document.body, {ignoredTags: ['script', 'noscript', 'style', 'textarea', 'option']});"></script>
+  </head>
+  <body>
+    <div style="display: none">
+      \(\gdef\eqq{\stackrel{?}{=}}\)
+    </div>
+    <header>
+      <img src="warblre.webp" alt="Warblre logo (bird on branch)">
+      <hgroup>
+        <h1>Mechanized semantics for ECMAScript regexes</h1>
+        <p class="author">
+          <a property="author" href="https://www.ef5.ch/">Noé De Santo</a>, <a href="https://systemf.epfl.ch">SYSTEMF</a>, EPFL
+        </p>
+        <p>
+          Supervised by <a href="https://aurele-barriere.github.io/">Aurèle Barrière</a> and <a href="https://pit-claudel.fr/clement/">Clément Pit-Claudel</a>
+        </p>
+      </hgroup>
+      <img src="qr.png" alt="QR code linking to this page">
+    </header>
+    <main>
+      <div id="background">
+        <article>
+          <header>
+            <h2>Background: Modern regexes are surprisingly complex</h2>
+          </header>
+          <section>
+            <article>
+              <div>1960s</div>
+              <div class="large-operator">\(\neq\)</div>
+              <div>2024</div>
+              <h3> </h3>
+            </article>
+            <article>
+              <div>
+                \[\begin{alignat*}{3}
+                  r\ {:}{:}{=}&\;\; a \;\;
+                               &&|\;\; \varepsilon \;\;
+                               &&|\;\; r_1r_2 \\
+                            |&\;\; r_1 | r_2 \;\;
+                               &&|\;\; r_1^ {*}
+                \end{alignat*}\]
+              </div>
+              <div class="large-operator rotated-operator">\(\subsetneqq\)</div>
+              <div>
+                <ul class="floating-code compact-list">
+                  <li>Capturing groups <code>(r)</code></li>
+                  <li>Lookaheads <code>(?=r)</code></li>
+                  <li>Lookbehinds <code>(?&lt;=r)</code></li>
+                  <li>Negative lookaheads <code>(?!r)</code></li>
+                  <li>Negative lookbehinds <code>(?&lt;!r)</code></li>
+                  <li>Backreferences <code>\1</code></li>
+                  <li>...</li>
+                </ul>
+              </div>
+              <h3>Growing feature set</h3>
+            </article>
+            <article>
+              <div>
+                \[
+                  \gdef\tmatch#1#2{ #1\ \vdash\ #2 }
+                  \begin{gather*}
+                    \frac{\tmatch{r_1}{v}}{\tmatch{r_1 | r_2}{v}} \quad
+                    \frac{\tmatch{r_2}{w}}{\tmatch{r_1 | r_2}{w}}
+                  \end{gather*}
+                \]
+              </div>
+              <div class="large-operator">\(\neq\)</div>
+              <div>
+                <img src="highlight.webp" alt="The full ECMAScript specification of regexes">
+              </div>
+              <h3>Increasingly subtle semantics</h3>
+            </article>
+            <article>
+              <div>
+                <pre><code class="ocaml"><span class="kw">let</span> <span class="kw">rec</span> matches <var>s</var> = <span class="kw">function</span>
+| Or (<var>l</var>, <var>r</var>) -> matches l s || matches r s
+| ...       -> ...</code></pre>
+              </div>
+              <div class="large-operator">\(\neq\)</div>
+              <div style="justify-self: start;">
+                <ul style="list-style-type: none; padding: 0;">
+                  <li>State-of-the-art implementations are complex:
+                    <p class="detail">Irregexp: &gt;20k LoC</p></li>
+                  <li>Existing models are incomplete or wrong:
+                    <p class="detail"><code>r? ≢ r|\(ε\)</code></p>
+                  </li>
+                  <li>State-of-the-art implementations have bugs:
+                    <p class="detail">
+                      <code>/(a?b??)*/.exec(<i>'ab'</i>) ≢ [<i>'a'</i>,<i>'a'</i>]</code>
+                    </p>
+                  </li>
+                </ul>
+              </div>
+              <h3>Increasingly complex code</h3>
+            </article>
+          </section>
+        </article>
+      </div>
+      <div id="callout">
+        <article id="quiz">
+          <header><h2>A pop quiz: “What does this regex do?!”</h2></header>
+          <section>
+            <!--
+              console.log(/a|ab/.exec('ab'))
+              console.log(/()?/.exec(''))
+              console.log(/()|/.exec(''))
+              console.log(/(a?b??)*/.exec('ab'))
+            -->
+            <p>Which of the following equalities hold in JavaScript?</p>
+            <ol>
+              <li><code>     /a|ab/.exec(<i>'ab'</i>) \(\eqq\) [<i>'ab'</i>]</code></li>
+              <li><code>        /()?/.exec(<i>''</i>) \(\eqq\) [<i>''</i>, <i>''</i>]</code></li>
+              <li><code>        /()|/.exec(<i>''</i>) \(\eqq\) [<i>''</i>, <i>''</i>]</code></li>
+              <li><code> /(a?b??)*/.exec(<i>'ab'</i>) \(\eqq\) [<i>'ab'</i>, <i>'b'</i>]</code></li>
+            </ol>
+            <p>The results would be different for Rust, POSIX, etc.</p>
+            <p class="highlight">Modern regexes are diverse and subtle.</p>
+            <p class="answers">Answers: <span class="low-contrast">1. No; 2. No; 3. Yes; 4. Yes.</span></p>
+          </section>
+        </article>
+        <div id="abstract">
+          <article id="problem">
+            <h2>Problem:</h2>
+            <section class="key-point">
+              We wanted to verify a regex engine (optimization, compilation, matching), but there were no mechanized semantics for real-world regexes.
+            </section>
+          </article>
+          <article id="solution">
+            <h2>Solution:</h2>
+            <section class="key-point">
+              We translated the ECMAScript regex specification to Coq.
+            </section>
+            <section>
+              <p>Our model covers 33 pages of English specs.  It is <strong>executable</strong> (in OCaml &amp; JS), <strong>proven-safe</strong> (terminates with no exceptions), <strong>auditable</strong> (literate), <strong>faithful</strong> (passes Test262), and <strong>future-proof</strong> (model & spec match 1-to-1).</p>
+              <p><strong>We lay robust foundations to verify efficient regex matchers and optimizers.</strong></p>
+              <!-- <li>Our model is <em>executable</em>, <em>proven-safe</em>, <em>faithful</em> and <em>future-proof</em>.</li> -->
+            </section>
+          </article>
+        </div>
+      </div>
+      <div id="contribution">
+        <article id="coq">
+          <header><h2>Our model is future-proof and straightforwardly auditable</h2></header>
+          <section>
+            <pre class="esh-standalone"><code class="coq"><b class="lit"><code>(*&gt;&gt; </code><code>Disjunction</code> :: <code>Alternative</code> | <code>Disjunction</code><code> &lt;&lt;*)</code></b>
+| Disjunction <b class="v">r<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">1</b></b><b class="esh-raised-placeholder">1</b></b></b> <b class="v">r<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">2</b></b><b class="esh-raised-placeholder">2</b></b></b> <b class="esh-non-ascii"><b><b>⇒</b></b></b>
+  <b class="lit"><code>(*&gt;&gt; </code>1. Let <code>m1</code> be <code>CompileSubpattern</code> of <code>Alternative</code> with arguments <code>rer</code> and <code>direction</code>.<code> &lt;&lt;*)</code></b>
+  <b class="kw">let</b>! <b class="v">m<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">1</b></b><b class="esh-raised-placeholder">1</b></b></b> =&lt;&lt; compileSubPattern r<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">1</b></b><b class="esh-raised-placeholder">1</b></b> (Disjunction_left r<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">2</b></b><b class="esh-raised-placeholder">2</b></b> <b class="esh-non-ascii"><b><b>∷</b></b></b> ctx) rer direction <b class="kw">in</b>
+  <b class="lit"><code>(*&gt;&gt; </code>2. Let <code>m2</code> be <code>CompileSubpattern</code> of <code>Disjunction</code> with arguments <code>rer</code> and <code>direction</code>.<code> &lt;&lt;*)</code></b>
+  <b class="kw">let</b>! <b class="v">m<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">2</b></b><b class="esh-raised-placeholder">2</b></b></b> =&lt;&lt; compileSubPattern r<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">2</b></b><b class="esh-raised-placeholder">2</b></b> (Disjunction_right r<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">1</b></b><b class="esh-raised-placeholder">1</b></b> <b class="esh-non-ascii"><b><b>∷</b></b></b> ctx) rer direction <b class="kw">in</b>
+  <b class="lit"><code>(*&gt;&gt; </code>3. Return a new <code>Matcher</code> with parameters <code>(x, c)</code> that captures <code>m1</code> and <code>m2</code> and performs
+<code>       </code>the following steps when called:<code> &lt;&lt;*)</code></b>
+  (<b class="kw esh-non-ascii"><b><b>λ</b></b></b> (<b class="v">x</b>: MatchState) (<b class="v">c</b>: MatcherContinuation) <b class="esh-non-ascii"><b><b>⇒</b></b></b>
+    <b class="lit off"><code>(*&gt;&gt; </code>a. Assert: <code>x</code> is a <code>MatchState</code>.<code> &lt;&lt;*)</code></b>
+    <b class="lit off"><code>(*&gt;&gt; </code>b. Assert: <code>c</code> is a <code>MatcherContinuation</code>.<code> &lt;&lt;*)</code></b>
+    <b class="lit"><code>(*&gt;&gt; </code>c. Let <code>r</code> be <code>m1(x, c)</code>.<code> &lt;&lt;*)</code></b>
+    <b class="kw">let</b>! <b class="v">r</b> =&lt;&lt; m<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">1</b></b><b class="esh-raised-placeholder">1</b></b> x c <b class="kw">in</b>
+    <b class="lit"><code>(*&gt;&gt; </code>d. If <code>r</code> is not <code>failure</code>, return <code>r</code>.<code> &lt;&lt;*)</code></b>
+    <b class="kw">if</b> r <b class="kw">is</b> not failure <b class="kw">then</b> r
+    <b class="lit"><code>(*&gt;&gt; </code>e. Return <code>m2(x, c)</code>.<code> &lt;&lt;*)</code></b>
+    <b class="kw">else</b> m<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">2</b></b><b class="esh-raised-placeholder">2</b></b> x c): Matcher</code></pre>
+          </section>
+        </article>
+        <article id="js">
+          <header><h2>Our model passes tests and proofs</h2></header>
+          <section>
+            <p>We <strong>prove termination and absence of errors</strong> to confirm the usability of the Coq model:</p>
+
+            <blockquote>
+              <pre class="esh-standalone"><code><b class="kw esh-non-ascii"><b><b>∀</b></b></b> (<b class="v">r</b>: Regex) <b class="v">input</b> <b class="v">m</b>,
+  compilePattern r = Ok m <b class="esh-non-ascii"><b><b>-></b></b></b>
+  m input <b class="esh-non-ascii"><b><b>≠</b></b></b> out_of_fuel.</code></pre>
+
+              <pre class="esh-standalone"><code><b class="kw esh-non-ascii"><b><b>∀</b></b></b> (<b class="v">r</b>: Regex) <b class="v">input</b> <b class="v">m</b>,
+  compilePattern r = Ok m <b class="esh-non-ascii"><b><b>-></b></b></b>
+  m input <b class="esh-non-ascii"><b><b>≠</b></b></b> assertion_failed.</code></pre>
+            </blockquote>
+
+            <p>We <strong>generate JS from Coq</strong> using extraction + Melange, then link with a Unicode library.</p>
+            <pre class="terminal"><code><strong>$ ./run_test262</strong>  # Test262 test suite</code>
+<samp>Ran 498 tests
+<b class="ok">495 passed</b>
+<!--<b class="warn">3 timed out</b>--></samp></pre>
+          </section>
+        </article>
+      </div>
+      <div id="challenges">
+        <article>
+          <header><h2>Mechanizing a large specification poses many challenges</h2></header>
+          <section>
+            <h3>Termination is non-obvious</h3>
+            <blockquote class="ecma-box">
+              <pre><code>/a\(\varepsilon\)*b/.exec('ab') \(=\) ???</code></pre>
+            </blockquote>
+            <p>
+              <em>Can <code>\(\varepsilon\)*</code> loop forever?</em>
+              <strong>We prove that it cannot.</strong>
+            </p>
+            <hr class="sep">
+            <h3>Some operations may fail</h3>
+            <blockquote class="ecma ecma-box">
+              <pre><code>Let <var>ch</var> be the character <var>Input</var>[<var>index</var>].</code></pre>
+            </blockquote>
+            <p>
+              <em>Is <code class="ecma"><var>index</var></code> always in bounds?</em>
+              <strong>We prove that it is.</strong>
+            </p>
+          </section>
+          <section>
+            <h3>Non-local references are not compatible with a simple structural traversal:</h3>
+            <blockquote class="ecma ecma-box">
+              <h4>Definition: CountLeftCapturingParensBefore ( <var>node</var> )</h4>
+              Return the number of
+              <span class="g-nt">Atom</span>
+              <span class="g-prod">::</span>
+              <span class="g-lit">(</span>
+              <span class="g-nt">GroupSpecifier<span class="g-mod">opt</span></span>
+              <span class="g-nt">Disjunction</span>
+              <span class="g-lit">)</span>
+              <span class="link">Parse Nodes</span> contained within <var>pattern</var> that either occur before <var>node</var> or contain <var>node</var>.
+            </blockquote>
+            <p>
+              <em>What does <code><var>pattern</var></code> refer to? How do we retrieve nodes that “occur before <code><var>node</var></code>”?</em></p>
+            <p>
+              <strong>We use a zipper to represent in-progress traversals of the pattern.</strong>
+            </p>
+          </section>
+        </article>
+      </div>
+    </main>
+    <footer>
+      <address>noe.desanto@epfl.ch</address>
+      <span class="venue">PLDI'24 Student Research Competition</span>
+      <img src="EPFL.svg" alt="EPFL logo">
+    </footer>
+  </body>
+</html>
