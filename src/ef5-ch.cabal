@@ -1,0 +1,18 @@
+name:               ef5-ch
+version:            0.1.0.0
+build-type:         Simple
+cabal-version:      >= 1.10
+
+executable site
+  main-is:          site.hs
+  other-modules:    Katex
+  hs-source-dirs:   .
+  build-depends:    base == 4.*
+                  , hakyll == 4.16.*
+                  , time == 1.12.*
+                  , process == 1.6.*
+                  , text == 2.0.*
+                  , pandoc == 3.1.*
+                  , pandoc-types == 1.23.*
+  ghc-options:      -threaded -rtsopts -with-rtsopts=-N
+  default-language: Haskell2010

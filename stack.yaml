@@ -1,0 +1,7 @@
+resolver: lts-22.27
+packages:
+- .
+
+nix:
+  enable: true
+  packages: [pkg-config, zlib nodePackages.katex]

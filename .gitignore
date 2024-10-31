@@ -1,6 +1,21 @@
-.bsp/
-.build/
-.site/
-.scala-build/
-.metals/
-.vscode/
+# old
+old
+
+# Vscode
+.vscode
+
+# Nix
+result
+
+# direnv/envrc
+.envrc
+.direnv
+
+# Stack & Hakyll
+.stack-work
+_cache
+_site
+
+# Symlinked/generated during build
+website/fonts
+website/katex
