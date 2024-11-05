@@ -1,15 +1,6 @@
 ---
 title: "About me"
 inlineCSS: >-
-  .hg1 {
-    color: var(--detonate);
-    font-weight: bold;
-    font-style: italic;
-  }
-  .hg2 {
-    color: var(--touches);
-    font-style: italic;
-  }
   .texBoldText {
     font-weight: bold;
     font-family: 'Iosevka Web';
@@ -31,17 +22,17 @@ both my Bachelor's and Master's degree in Computer Science.
 
 My two main centers of interest are
 
-- <span class="hg1">Programming Languages</span>:
+- **Programming Languages**:
   Even though some people might see them as nothing more than tools, I see
   them as a fascinating subject of study.
   Some topics that I'm interested in are:
-  - <span class="hg2">Compilers</span>, which have the delicate task of
+  - _Compilers_, which have the delicate task of
     transforming code written for humans into efficient code meant for machines;
-  - <span class="hg2">Type systems</span>, and how these can be used by
+  - _Type systems_, and how these can be used by
     programmers to express and communicate what their code is doing;
-  - <span class="hg2">Semantics</span>, i.e. what do programs actually mean,
+  - _Semantics_, i.e. what do programs actually mean,
     which allow precise reasoning about code;
-- and <span class="hg1">Software Verification</span>: how to make sure that
+- and **Software Verification**: how to make sure that
   software does exactly what we expect (and want) it to do? I'm particularly
   interested in applying this to my aforementioned other center of interest,
   i.e. verifying all of the code which is required to get a working
