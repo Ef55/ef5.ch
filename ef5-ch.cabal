@@ -6,8 +6,9 @@ cabal-version:      >= 1.10
 executable site
   main-is:          site.hs
   other-modules:    Katex
-  hs-source-dirs:   .
-  build-depends:    base == 4.*
+  hs-source-dirs:   src
+  build-depends:  ghc == 9.6.6
+                  ,  base == 4.*
                   , hakyll == 4.16.*
                   , time == 1.12.*
                   , process == 1.6.*

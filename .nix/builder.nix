@@ -3,7 +3,7 @@
 mkDerivation {
   pname = "ef5-ch";
   version = "0.1.0.0";
-  src = ./../src;
+  src = ../.;
   isLibrary = false;
   isExecutable = true;
   executableHaskellDepends = [

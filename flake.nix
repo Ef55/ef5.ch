@@ -10,11 +10,12 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
+
         hpkgs = pkgs.haskell.packages.ghc966;
-        
-        executable = hpkgs.callPackage ./.nix/builder.nix {};
 
         iosevka-custom = pkgs.callPackage ./.nix/iosevka.nix {};
+        
+        executable = hpkgs.callPackage ./.nix/builder.nix {};
 
         runner = pkgs.writeShellApplication {
           name = "ef5-runner";
@@ -68,6 +69,7 @@
         devShells = {
           default = pkgs.mkShell {
             buildInputs = (with hpkgs; [
+              ghc
               stack
               hakyll
               cabal2nix
@@ -75,14 +77,10 @@
               haskell-language-server
               ormolu
               hlint
-            ]) ++ website.buildInputs;
-          };
-          
-          GREETING = "potato";
+            ]);
 
-          shellHook = ''
-            echo "Hello $GREETING"
-          '';
+            NIX_PATH = "nixpkgs=" + pkgs.path;
+          };
         };
 
         apps = {
