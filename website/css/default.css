@@ -3,8 +3,6 @@
   --cobalt: #0047AB;
   --select: #98B4D4;
   --envy: #5a0284;
-  --red: red;
-  /* --darker-red: #C10D0D; */
 }
 
 ::selection {
@@ -14,7 +12,7 @@
 
 a {
   color: inherit;
-  text-decoration: underline var(--red) 1px;
+  text-decoration: underline var(--cerulean) 2px;
 }
 
 a:hover {
@@ -37,7 +35,7 @@ html {
   font-family: 'Iosevka Web';
 }
 
-header {
+body > header {
   font-size: 1.8rem;
   display: flex;
   flex-wrap: wrap;
@@ -79,37 +77,18 @@ footer {
 }
 
 h1 {
-  font-size: 2.4rem;
+  font-size: inherit;
+  border: none;
+  margin: 0;
 }
 
 h2 {
-  font-size: 2rem;
+  font-size: 2.4rem;
 }
 
-.abstract {
-  margin-left: 0.5rem;
-  padding-left: 0.5rem;
-  border-left: var(--red) solid 1px;
+h3 {
+  font-size: 2rem;
 }
-.abstract > p:first-child {
-  margin-top: 0;
-}
-/* Publications */
-.publication .series {
-  font-weight: 600;
-}
-.publication .title {
-  font-style: normal;
-  font-weight: 600;
-}
-.publication .metadata .author.hg {
-  font-weight: 500;
-  font-style: italic;
-}
-.publication summary:hover {
-  cursor: pointer;
-  color: var(--cerulean);
-} 
 
 @media (max-width: 639px) {
   body {
@@ -117,7 +96,7 @@ h2 {
     margin: 0;
     padding: 0 5%;
   }
-  header {
+  body > header {
     margin: 2rem 0;
   }
 }
@@ -128,16 +107,8 @@ h2 {
     margin: 0 auto;
     padding: 0;
   }
-  header {
+  body > header {
     margin: 0 0 3rem;
     padding: 1.2rem 0;
   }
-  /* nav {
-    margin: 0;
-    text-align: right;
-  }
-  nav a {
-    margin: 0 0 0 1.2rem;
-    display: inline;
-  } */
 }

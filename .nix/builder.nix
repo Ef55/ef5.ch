@@ -1,4 +1,4 @@
-{ mkDerivation, base, hakyll, lib, pandoc, pandoc-types, process, text, time }:
+{ mkDerivation, base, hakyll, lib, pandoc, pandoc-types, process, text, time, lucid2, clay }:
 
 mkDerivation {
   pname = "ef5-ch";
@@ -7,7 +7,7 @@ mkDerivation {
   isLibrary = false;
   isExecutable = true;
   executableHaskellDepends = [
-    base hakyll pandoc pandoc-types process text time
+    base hakyll pandoc pandoc-types process text time lucid2 clay
   ];
   license = "unknown";
   mainProgram = "site";
