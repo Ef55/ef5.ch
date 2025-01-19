@@ -45,6 +45,10 @@ main = do
   context <- baseContext
   hakyllWith configuration $ do
     -- Data serving
+    match "robots.txt" $ do
+      route idRoute
+      compile copyFileCompiler
+
     match "images/*" $ do
       route idRoute
       compile copyFileCompiler

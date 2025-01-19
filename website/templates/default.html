@@ -4,10 +4,15 @@
         <meta charset="utf-8">
         <meta http-equiv="x-ua-compatible" content="ie=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        $if(description)$
+        <meta name="description" content="$description$">
+        $endif$
+        <meta name="robots" content="noimageindex">
+
         <title>$siteName$ - $title$</title>
+
         <link rel="stylesheet" href="/css/default.css" />
         <link rel="stylesheet" href="/fonts/Iosevka-web/Iosevka-web.css" />
-
         <link rel="stylesheet" href="/katex/katex.min.css" />
         $if(inlineCSS)$
         <style>$inlineCSS$</style>

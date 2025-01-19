@@ -1,6 +1,15 @@
 ---
 title: Home
+description: Noé De Santo's website
+inlineCSS: >-
+  .me {
+    float: right;
+    width: 40%;
+    margin: 0 0em 1em 1em;
+  }
 ---
+
+<img src="/images/me.png" class="me">
 
 Hi! I'm **Noé Eric De Santo**.
 
