@@ -13,7 +13,7 @@ inlineCSS: >-
 
 Hi! I'm **Noé Eric De Santo**.
 
-I'm a PhD candidate at the [University of
+I'm a PhD student at the [University of
 Pennsylvania](https://www.cis.upenn.edu/) in Computer Science.
 My two main centers of interest are _Programming Languages_ and _Software
 Verification_.

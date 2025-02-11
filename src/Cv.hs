@@ -148,6 +148,18 @@ data Experience = Experience
     description :: Markdown
   }
 
+data Class = Class
+  { className :: String,
+    editions :: [Markdown]
+  }
+
+data Teaching = Teaching
+  { teachingRole :: String,
+    teachingPeriod :: Period,
+    teachingInstitution :: Institution,
+    classes :: [Class]
+  }
+
 data Project = Project
   { projName :: String,
     projContext :: Markdown,
@@ -174,6 +186,9 @@ linkHtml :: Link -> Html ()
 linkHtml (Link label link) =
   a_ [href_ link, class_ "box-link"] $ toHtml label
 
+institutionHtml :: Institution -> Html ()
+institutionHtml = span_ . fromString . show
+
 educationHtml :: Education -> Html ()
 educationHtml (Education inst dipls) =
   article_ [class_ "educatin", id_ (fromString $ instname inst)] $ do
@@ -182,9 +197,6 @@ educationHtml (Education inst dipls) =
       periodHtml (Foldable1.foldl1 comb $ fmap snd dipls)
     ul_ (Foldable.foldMap (li_ . diplomaHtml) (NonEmpty.reverse dipls))
   where
-    institutionHtml :: Institution -> Html ()
-    institutionHtml = span_ . fromString . show
-
     periodHtml :: Period -> Html ()
     periodHtml = span_ . fromString . show
 
@@ -233,6 +245,24 @@ experienceHtml (Experience name period loc supers desc) =
       div_ [class_ "location"] (markdownInlineHtml loc)
       supervisorsHtml supers
     div_ [class_ "description"] (markdownHtml desc)
+
+teachingHtml :: Teaching -> Html ()
+teachingHtml (Teaching role period institution classes) =
+  article_ [class_ "teaching"] $ do
+    header_ [class_ "line"] $ do
+      span_ $ toHtml role
+      span_ $ toHtml (show period)
+    div_ [class_ "metadata"] $ do
+      div_ [class_ "location"] (institutionHtml institution)
+    div_ [class_ "classes"] (ul_ (Foldable.foldMap classHtml classes))
+  where
+    classHtml :: Class -> Html ()
+    classHtml (Class name editions) = do
+      li_ $ do
+        toHtml name
+        toHtml " ("
+        Foldable.fold (List.intersperse (toHtml ", ") $ markdownHtml <$> editions)
+        toHtml ")"
 
 projectHtml :: Project -> Html ()
 projectHtml (Project name ctx supers desc links) =
@@ -314,16 +344,6 @@ css = do
   ".links" |> star ? do
     marginLeft auto
   where
-    -- .abstract {
-    --   margin-left: 0.5rem;
-    --   padding-left: 0.5rem;
-    --   border-left: var(--cerulean) solid 1px;
-    -- }
-    -- .publication summary:hover {
-    --   cursor: pointer;
-    --   color: var(--cerulean);
-    -- }
-
     envyColor :: Text
     envyColor = "var(--envy)"
     transparentEnvyColor :: Text
@@ -333,16 +353,16 @@ css = do
 --- Actual CV
 --------------------------------------------------------------------------------
 
+epfl, penn :: Institution
+epfl = Institution "EPFL" "Lausanne" "Switzerland"
+penn = Institution "University of Pennsylvania" "Philadelphia" "USA"
+
 education :: [Education]
 education =
   [ Education penn $ phd :| [],
     Education epfl $ bachelor :| [master]
   ]
   where
-    epfl, penn :: Institution
-    epfl = Institution "EPFL" "Lausanne" "Switzerland"
-    penn = Institution "University of Pennsylvania" "Philadelphia" "USA"
-
     bachelor, master, phd :: (String, Period)
     bachelor = ("Bachelor of Science BSc in Computer Science", Period (Year 2018) (Year 2021))
     master = ("Master of Science BSc in Computer Science", Period (Year 2021) (Year 2024))
@@ -388,7 +408,7 @@ experiences =
         period = Period (MonthYear March 2024) (MonthYear July 2024),
         location = Markdown "[System F](https://systemf.epfl.ch/) (EPFL), Switzerland.",
         supervisors = ["Dr. Aurèle Barrière", "Prof. Clément Pit-Claudel"],
-        description = Markdown "Continued work on my Master’s thesis, [Warblre](https://ef5.ch/projects/warblre.html), a mechanization in Coq of JS regex semantics."
+        description = Markdown "Continued work on my Master’s thesis, [Warblre](/projects/warblre.html), a mechanization in Coq of JS regex semantics."
       },
     Experience
       { jobname = "Student Intern",
@@ -403,19 +423,48 @@ experiences =
         location = Markdown "[LARA](https://lara.epfl.ch/w/) (EPFL), Switzerland.",
         supervisors = ["Prof. Viktor Kunčak"],
         description = Markdown "Developed a calculus allowing the elimination of pieces of code (called “ghost”) without altering the result or visible effects of a computation. The calculus notably supports both mutable references and subtyping. Also investigated the relation between ghost code and the non-interference property, which comes from the domain of security type systems."
+      }
+  ]
+
+teaching :: [Teaching]
+teaching =
+  [ Teaching
+      { teachingRole = "Teaching Assistant",
+        teachingPeriod = Period (Year 2025) Present,
+        teachingInstitution = penn,
+        classes =
+          [ Class
+              { className = "CIS-5521 Compilers",
+                editions =
+                  [ Markdown "[2025](https://www.seas.upenn.edu/~cis5521/current/)"
+                  ]
+              }
+          ]
       },
-    Experience
-      { jobname = "Student Assistant",
-        period = Period (Year 2020) (Year 2023),
-        location = Markdown "EPFL, Switzerland.",
-        supervisors = [],
-        description =
-          Markdown $
-            "For the following classes:\n\n"
-              <> "- Formal Verification ([2022](https://isa.epfl.ch/imoniteur_ISAP/!itffichecours.htm?ww_i_matiere=2507044661&ww_x_anneeAcad=2022-2023&ww_i_section=249847), [2023](https://isa.epfl.ch/imoniteur_ISAP/!itffichecours.htm?ww_i_matiere=2507044661&ww_x_anneeAcad=2023-2024&ww_i_section=249847))\n"
-              <> "- Computer Language Processing ([2021](https://isa.epfl.ch/imoniteur_ISAP/!itffichecours.htm?ww_i_matiere=1887888591&ww_x_anneeAcad=2021-2022&ww_i_section=249847))\n"
-              <> "- Practice of Object-Oriented Programming ([2020](https://isa.epfl.ch/imoniteur_ISAP/!itffichecours.htm?ww_i_matiere=1677965677&ww_x_anneeAcad=2019-2020&ww_i_section=249847), [2021](https://isa.epfl.ch/imoniteur_ISAP/!itffichecours.htm?ww_i_matiere=1677965677&ww_x_anneeAcad=2020-2021&ww_i_section=249847))\n\n"
-              <> "Responsibilities included: presenting labs to students, correcting labs and exams, creating and maintaining grading infrastructures, overhauling labs, writing solution sheets."
+    Teaching
+      { teachingRole = "Student Assistant",
+        teachingPeriod = Period (Year 2020) (Year 2023),
+        teachingInstitution = epfl,
+        classes =
+          [ Class
+              { className = "CS-550 Formal Verification",
+                editions =
+                  [ Markdown "[2022](https://gitlab.epfl.ch/lara/cs550/-/tree/2022)",
+                    Markdown "[2023](https://gitlab.epfl.ch/lara/cs550/-/tree/2023)"
+                  ]
+              },
+            Class
+              { className = "CS-320 Computer Language Processing",
+                editions = [Markdown "[2021](https://isa.epfl.ch/imoniteur_ISAP/!itffichecours.htm?ww_i_matiere=1887888591&ww_x_anneeAcad=2021-2022&ww_i_section=249847)"]
+              },
+            Class
+              { className = "CS-108 Practice of Object-Oriented Programming",
+                editions =
+                  [ Markdown "[2020](https://cs108.epfl.ch/archive/20/)",
+                    Markdown "[2021](https://cs108.epfl.ch/archive/21/)"
+                  ]
+              }
+          ]
       }
   ]
 
@@ -426,7 +475,7 @@ projects =
         projContext = Markdown "Master thesis done at [System F](https://systemf.epfl.ch/), EPFL.",
         projSupervisors = ["Dr. Aurèle Barrière", "Prof. Clément Pit-Claudel"],
         projDescription = Markdown "Ported the JavaScript regexes specification to the Coq proof assistant. Care was taken to ensure that the ported specification was faithful to the original paper one, and that one could convince oneself of this fact. Proved key properties of the specification, such as termination. Additionally dis-proved some incorrect simplifications found in the literature about these semantics.",
-        projLinks = [Link "More" "https://ef5.ch/projects/warblre.html"]
+        projLinks = [Link "More" "/projects/warblre.html"]
       },
     Project
       { projName = "Exproc — Computation Expressions for Scala",
@@ -462,6 +511,7 @@ cvCompiler =
               [ section "Education" educationHtml education,
                 section "Publications" publicationHtml publications,
                 section "Research & Industry Experience" experienceHtml experiences,
+                section "Teaching" teachingHtml teaching,
                 section "Research & Software Projects" projectHtml projects
               ]
   where

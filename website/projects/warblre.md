@@ -117,7 +117,7 @@ inlineCSS: >-
   }
 ---
 
-## A mechanization of ECMAScript regexes
+### A mechanization of ECMAScript regexes
 
 The goal of this project was to mechanize in the Coq proof assistant the regexes
 defined in the
@@ -153,7 +153,7 @@ proofs about these regexes.
     <b class="kw">else</b> m<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">2</b></b><b class="esh-raised-placeholder">2</b></b> x c): Matcher</code>
 </pre>
 
-## Links
+### Links
 
 - Warblre's [repository](https://github.com/epfl-systemf/Warblre);
 - The Warblre [paper](https://doi.org/10.1145/3674666);
