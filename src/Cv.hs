@@ -366,7 +366,7 @@ education =
     bachelor, master, phd :: (String, Period)
     bachelor = ("Bachelor of Science BSc in Computer Science", Period (Year 2018) (Year 2021))
     master = ("Master of Science BSc in Computer Science", Period (Year 2021) (Year 2024))
-    phd = ("PhD candidate in Computer Science", Period (Year 2024) Present)
+    phd = ("PhD student in Computer Science", Period (Year 2024) Present)
 
 publications :: [Publication]
 publications =
@@ -488,7 +488,7 @@ projects =
       { projName = "Verified System F in Stainless",
         projContext = Markdown "Course project for the [Formal Verification](https://gitlab.epfl.ch/lara/cs550/-/tree/2021) class.",
         projSupervisors = [],
-        projDescription = Markdown "Implemented an interpreter for System F in the subset of Scala supported by [Stainless](https://github.com/epfl-lara/stainless), a verification tool for Scala. Then proved the main properties of the implemented calculus, most notably that it satisfies progress and preservation. This project used to be the second largest one (in number of verification conditions) done in Stainless. It is also still used as a benchmark for Stainless, as part of the bolts repository.",
+        projDescription = Markdown "Implemented an interpreter for System F in the subset of Scala supported by [Stainless](https://github.com/epfl-lara/stainless), a verification tool for Scala. Then proved the main properties of the implemented calculus, most notably that it satisfies progress and preservation. This project used to be the second largest one (in number of verification conditions) done in Stainless. It is also still used as a benchmark for Stainless, as part of the [bolts](https://github.com/epfl-lara/bolts) repository.",
         projLinks =
           [ Link "Repository" "https://github.com/Ef55/stainless-stlc",
             Link "Report" "https://github.com/Ef55/Reports-and-presentations/blob/main/stainless_systemf/build/report.pdf"
