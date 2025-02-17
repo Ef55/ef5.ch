@@ -16,6 +16,7 @@
         <link rel="stylesheet" href="/css/default.css" />
         <link rel="stylesheet" href="/fonts/Iosevka-web/Iosevka-web.css" />
         <link rel="stylesheet" href="/katex/katex.min.css" />
+        <script src="/js/main.js"></script>
         $if(inlineCSS)$
         <style>$inlineCSS$</style>
         $endif$
@@ -30,7 +31,8 @@
                 <a href="/about.html">About</a>
                 <a href="/cv.html">CV</a>
                 <div class="separator"></div>
-                <a href="https://github.com/Ef55"><img src="/images/Github.svg" alt="Github" style="vertical-align:middle"></a>
+                <a onmouseover="setMailto(this)" title="Allow scripts + hover to reveal email">📧</a>
+                <a href="https://github.com/Ef55"><img src="/images/Github.svg" alt="Github" style="height:1em;"></a>
             </nav>
         </header>
 

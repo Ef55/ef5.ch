@@ -9,7 +9,7 @@ inlineCSS: >-
   }
 ---
 
-<img src="/images/me.png" class="me">
+<img src="/images/me.png" class="me" alt="">
 
 Hi! I'm **Noé Eric De Santo**.
 

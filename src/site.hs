@@ -49,6 +49,15 @@ main = do
       route idRoute
       compile copyFileCompiler
 
+    match "favicon.ico" $ do
+      route idRoute
+      compile copyFileCompiler
+
+    match "js/*" $ do
+      route idRoute
+      -- TODO: compress
+      compile copyFileCompiler
+
     match "images/*" $ do
       route idRoute
       compile copyFileCompiler
