@@ -1,6 +1,4 @@
 --------------------------------------------------------------------------------
-{-# LANGUAGE OverloadedStrings #-}
-
 import Cv
 import Data.Functor ((<&>))
 import Data.Monoid (mappend)
@@ -69,6 +67,13 @@ main = do
     match "css/*" $ do
       route idRoute
       compile compressCssCompiler
+
+    match "bibliographies/**.bib" $ do
+      compile getResourceBody
+
+    match "papers/**.pdf" $ do
+      route idRoute
+      compile copyFileCompiler
 
     match "katex/katex.min.css" $ do
       route idRoute

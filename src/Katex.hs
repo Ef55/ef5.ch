@@ -13,7 +13,7 @@ localKatex = walk processMath
 processMath :: Inline -> Inline
 processMath (Math typ txt) =
     let svg = unsafePerformIO $ runKatex typ (unpack txt)
-    in RawInline (Format $ pack "html") (pack svg) -- Math typ (pack "gaga")
+    in RawInline (Format $ pack "html") (pack svg)
     where
         runKatex :: MathType -> String -> IO String
         runKatex DisplayMath input = runKatexWithExtraArgs ["-d"] input

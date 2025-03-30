@@ -1,0 +1,67 @@
+@article{rebound_2025,
+author = {De Santo, No\'{e} and Weirich, Stephanie},
+title = {Rebound: Efficient, expressive, and well-scoped binding},
+year = {2025},
+url = {./papers/Rebound_DRAFT25.pdf},
+abstract = {We introduce the Rebound library that supports well-scoped
+term representations in Haskell and automates the definition
+of substitution, alpha-equivalence, and other operations
+that work with binding structures. The key idea of our de-
+sign is the use of first-class environments that map variables
+to expressions in some new scope. By statically tracking
+scopes, users of this library gain confidence that they have
+correctly maintained the subtle invariants that stem from
+using de Bruijn indices. Behind the scenes, Rebound uses
+environments to optimize the application of substitutions,
+while providing explicit access to these data structures when
+desired. We demonstrate that this library is expressive by
+using it to implement a wide range of language features with
+sophisticated uses of binding and several different operations
+that use this abstract syntax. Our examples include
+pi-forall, a tutorial implementation of a type checker for
+a dependently-typed programming language. Finally, we
+benchmark Rebound to understand its performance characteristics
+and find that it produces faster code than competing libraries.},
+month = jun,
+keywords = {Dependent Haskell, well-scoped term representation, de Bruijn indices},
+annote = {\href{./papers/Rebound_DRAFT25.pdf}{Preprint}\href{https://github.com/sweirich/rebound}{Repository}}
+}
+
+@article{warblre_2024,
+author = {De Santo, No\'{e} and Barri\`{e}re, Aur\`{e}le and Pit-Claudel, Cl\'{e}ment},
+title = {A Coq Mechanization of JavaScript Regular Expression Semantics},
+year = {2024},
+issue_date = {August 2024},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {8},
+number = {ICFP},
+url = {https://doi.org/10.1145/3674666},
+doi = {10.1145/3674666},
+abstract = {We present an executable, proven-safe, faithful, and future-proof
+Coq mechanization of JavaScript regular expression (regex) matching, as
+specified by the latest published edition of ECMA-262 section 22.2. This is, to
+our knowledge, the first time that an industrial-strength regex language has
+been faithfully mechanized in an interactive theorem prover. We highlight
+interesting challenges that arose in the process (including issues of encoding,
+corner cases, and executability), and we document the steps that we took to
+ensure that the result is straightforwardly auditable and that our understanding
+of the specification aligns with existing implementations.\\ We demonstrate the
+usability and versatility of the mechanization through a broad collection of
+analyses, case studies, and experiments: we prove that JavaScript regex matching
+always terminates and is safe (no assertion failures); we identify subtle corner
+cases that led to mistakes in previous publications; we verify an optimization
+extracted from a state-of-the-art regex engine; we show that some classic
+properties described in automata textbooks and used in derivatives-based
+matchers do not hold in JavaScript regexes; and we demonstrate that the cost of
+updating the mechanization to account for changes in the original specification
+is reasonably low.\\ Our mechanization can be extracted to OCaml and JavaScript
+and linked with Unicode libraries to produce an executable regex engine that
+passes the relevant parts of the official Test262 conformance test suite.},
+journal = {Proc. ACM Program. Lang.},
+month = aug,
+articleno = {270},
+numpages = {29},
+keywords = {Coq, ECMAScript, Mechanization, Regex},
+annote = {\href{https://doi.org/10.1145/3674666}{PDF}\href{https://github.com/systemf-epfl/warblre}{Repository}\href{./projects/warblre.html}{More}}
+}

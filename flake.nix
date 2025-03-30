@@ -77,6 +77,8 @@
               haskell-language-server
               ormolu
               hlint
+
+              pkgs.nodePackages.katex
             ]);
 
             NIX_PATH = "nixpkgs=" + pkgs.path;

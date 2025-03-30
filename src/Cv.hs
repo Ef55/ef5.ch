@@ -4,10 +4,12 @@
 
 module Cv where
 
-import Clay hiding (link, location, name, title)
+import Bibtex
+import Clay hiding (link, location, name, title, url)
 import qualified Clay.Size as Size
 import Clay.Stylesheet (Feature (Feature))
 import qualified Control.Monad as Monad
+import Control.Monad.Error.Class (MonadError (catchError))
 import qualified Data.Foldable as Foldable
 import qualified Data.Foldable1 as Foldable1
 import qualified Data.List as List
@@ -16,7 +18,9 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import Data.String (fromString)
 import Data.Text (Text)
-import qualified Data.Text.Lazy as Text
+import qualified Data.Text as Text
+import qualified Data.Text.Lazy as LText
+import Data.Text.Titlecase (titlecase)
 import Hakyll hiding (Markdown, trim)
 import Lucid
   ( Html,
@@ -27,6 +31,7 @@ import Lucid
     details_,
     div_,
     h3_,
+    h4_,
     header_,
     hr_,
     href_,
@@ -38,28 +43,13 @@ import Lucid
     summary_,
     ul_,
   )
+import Markdown
 import qualified Text.Pandoc as Pandoc
 import Prelude hiding (span, (**))
 
 --------------------------------------------------------------------------------
 --- Data representation
 --------------------------------------------------------------------------------
-
-newtype Markdown = Markdown Text
-
-markdownToHtml :: Bool -> Markdown -> Html ()
-markdownToHtml i (Markdown s) =
-  let r = Pandoc.runPure $ do
-        md <-
-          Pandoc.readMarkdown Pandoc.def s
-        let md' = case md of
-              Pandoc.Pandoc m [Pandoc.Para p] | i -> Pandoc.Pandoc m [Pandoc.Plain p]
-              _ | i -> error $ "Could not render `" <> show s <> "` to inline html."
-              _ -> md
-        Pandoc.writeHtml5String Pandoc.def md'
-   in case r of
-        Left err -> error "Pandoc error"
-        Right r -> toHtmlRaw r
 
 data Link = Link Text Text
 
@@ -111,8 +101,7 @@ data Period = Period {from :: Date, to :: Date}
 
 instance Show Period where
   show (Period l@(MonthYear lm ly) r@(MonthYear rm ry))
-    | ly == ry =
-        show lm ++ "-" ++ show rm ++ " " ++ show ly
+    | ly == ry = show lm ++ "-" ++ show rm ++ " " ++ show ly
   show (Period l r) = show (trim l) ++ "-" ++ show (trim r)
 
 comb (Period l _) (Period _ r) = Period l r
@@ -129,15 +118,6 @@ instance Show Institution where
 data Education = Education
   { institution :: Institution,
     diplomas :: NonEmpty.NonEmpty (String, Period)
-  }
-
-data Publication = Publication
-  { venue :: String,
-    title :: String,
-    link :: Maybe String,
-    authors :: [String],
-    extra :: Maybe Markdown,
-    abstract :: Maybe Markdown
   }
 
 data Experience = Experience
@@ -172,18 +152,12 @@ data Project = Project
 --- Renderers to HTML
 --------------------------------------------------------------------------------
 
-maybeHtml :: (a -> Html ()) -> Maybe a -> Html ()
-maybeHtml f (Just v) = f v
-maybeHtml _ Nothing = pure ()
-
-markdownHtml :: Markdown -> Html ()
-markdownHtml = markdownToHtml False
-
-markdownInlineHtml :: Markdown -> Html ()
-markdownInlineHtml = markdownToHtml True
-
 linkHtml :: Link -> Html ()
 linkHtml (Link label link) =
+  a_ [href_ link] $ toHtml label
+
+boxedLinkHtml :: Link -> Html ()
+boxedLinkHtml (Link label link) =
   a_ [href_ link, class_ "box-link"] $ toHtml label
 
 institutionHtml :: Institution -> Html ()
@@ -191,7 +165,7 @@ institutionHtml = span_ . fromString . show
 
 educationHtml :: Education -> Html ()
 educationHtml (Education inst dipls) =
-  article_ [class_ "educatin", id_ (fromString $ instname inst)] $ do
+  article_ [class_ "education", id_ (fromString $ instname inst)] $ do
     header_ [class_ "line"] $ do
       institutionHtml inst
       periodHtml (Foldable1.foldl1 comb $ fmap snd dipls)
@@ -205,27 +179,43 @@ educationHtml (Education inst dipls) =
       div_ [class_ "line"] (span_ (fromString name) <> periodHtml period)
 
 publicationHtml :: Publication -> Html ()
-publicationHtml (Publication venue title link authors extra abst) =
+publicationHtml (Publication venue doi url title authors abstract year month extra annote) =
   article_ [class_ "publication"] $ do
     header_ $ do
-      span_ [class_ "series"] $ fromString ("[" <> venue <> "]")
+      span_ [class_ "series"] $
+        case venue of
+          Just venue ->
+            fromString
+              ( "["
+                  <> Text.unpack venue
+                  <> "'"
+                  <> show (year `mod` 100)
+                  <> "]"
+              )
+          Nothing -> span_ [class_ "draft-tag"] $ fromString "[Draft]"
       " "
-      span_ [class_ "title"] $
-        Maybe.maybe (fromString title) (\l -> a_ [href_ (fromString l)] (fromString title)) link
+      span_ [class_ "title"] $ a_ [href_ url] (fromString $ titlecase $ Text.unpack title)
     div_ [class_ "metadata"] $ do
       div_ [class_ "authors"] $ do
         Foldable.fold $ List.intersperse ", " $ fmap styleAuthor authors
+    -- I don't like to use annote for that, but pandoc/bibtex don't make my life
+    -- easy...
+    Monad.unless (List.null annote) $ div_ [class_ "links"] $ do
+      "["
+      Foldable.fold $ List.intersperse "; " (markdownInlineHtml <$> annote)
+      "]"
     maybeHtml (div_ [class_ "extra"] . markdownInlineHtml) extra
     maybeHtml
       ( \abst -> details_ $ do
           summary_ "Abstract"
           div_ [class_ "abstract"] (markdownHtml abst)
       )
-      abst
+      abstract
   where
-    styleAuthor :: String -> Html ()
-    styleAuthor name =
-      span_ [class_ (if isMe name then "author hg" else "author")] $ fromString name
+    styleAuthor :: (Text, Text) -> Html ()
+    styleAuthor (fname, lname) =
+      let name = (Text.unpack fname <> " " <> Text.unpack lname)
+       in span_ [class_ (if isMe name then "author hg" else "author")] $ fromString name
 
     isMe :: String -> Bool
     isMe name = name == "Noé De Santo"
@@ -273,8 +263,8 @@ projectHtml (Project name ctx supers desc links) =
         div_ [class_ "metadata"] $ do
           div_ [class_ "context"] (markdownInlineHtml ctx)
           supervisorsHtml supers
-      div_ [class_ "links"] $ do
-        Foldable.foldMap linkHtml links
+      div_ [class_ "side-links"] $ do
+        Foldable.foldMap boxedLinkHtml links
     div_ [class_ "description"] (markdownHtml desc)
 
 --------------------------------------------------------------------------------
@@ -329,6 +319,8 @@ css = do
     fontWeight bold
     fontStyle italic
     "color" -: "var(--cerulean)"
+  ".draft-tag" ? do
+    "background" -: "color-mix(in srgb, gray 60%, transparent)"
   ".abstract" ? do
     marginLeft (Size.em 3 @/ 16)
     paddingLeft (Size.em 1 @/ 2)
@@ -337,11 +329,11 @@ css = do
     cursor pointer
     "color" -: "var(--cerulean)"
 
-  ".links" ? do
+  ".side-links" ? do
     display flex
     flexDirection column
     "row-gap" -: "0.05em"
-  ".links" |> star ? do
+  ".side-links" |> a ? do
     marginLeft auto
   where
     envyColor :: Text
@@ -364,41 +356,30 @@ education =
   ]
   where
     bachelor, master, phd :: (String, Period)
-    bachelor = ("Bachelor of Science BSc in Computer Science", Period (Year 2018) (Year 2021))
-    master = ("Master of Science BSc in Computer Science", Period (Year 2021) (Year 2024))
+    bachelor = ("Bachelor of Science BSc in Computer and Information Science", Period (Year 2018) (Year 2021))
+    master = ("Master of Science MSc in Computer Science", Period (Year 2021) (Year 2024))
     phd = ("PhD student in Computer Science", Period (Year 2024) Present)
 
-publications :: [Publication]
-publications =
-  [ warblre,
-    warblrePoster
-  ]
+mkPublications :: Compiler [(String, [Publication])]
+mkPublications = do
+  articles <- loadBody "bibliographies/main.bib" >>= parsePublications
+  return
+    [ ("Articles", articles),
+      ("Other publications", [warblrePoster])
+    ]
   where
-    warblre =
-      Publication
-        { venue = "ICFP'24",
-          title = "A Coq Mechanization of JavaScript Regular Expression Semantics",
-          link = Just "https://doi.org/10.1145/3674666",
-          authors = ["Noé De Santo", "Aurèle Barrière", "Clément Pit-Claudel"],
-          abstract =
-            Just $
-              Markdown $
-                "We present an executable, proven-safe, faithful, and future-proof Coq mechanization of JavaScript regular expression (regex) matching, as specified by the last published edition of ECMA-262 section 22.2. This is, to our knowledge, the first time that an industrial-strength regex language has been faithfully mechanized in an interactive theorem prover. We highlight interesting challenges that arose in the process (including issues of encoding, corner cases, and executability), and we document the steps that we took to ensure that the result is straightforwardly auditable and that our understanding of the spec aligns with existing implementations."
-                  <> "\n\n"
-                  <> "We demonstrate the usability and versatility of the mechanization through a broad collection of analyses, case studies, and experiments: we prove that JavaScript regex matching always terminates and is safe (no assertion failures); we identify subtle corner cases that led to mistakes in previous publications; we verify an optimization extracted from a state-of-the-art regex engine; we show that some classic properties described in automata textbooks and used in derivatives-based matchers do not hold in JavaScript regex; and we demonstrate that the cost of updating the mechanization to account for changes in the original specification is reasonably low."
-                  <> "\n\n"
-                  <> "Our mechanization can be extracted to OCaml and linked with Unicode libraries to produce an executable engine that passes the relevant parts of the official Test262 conformance test suite.",
-          extra = Nothing
-        }
     warblrePoster =
       Publication
-        { venue = "PLDI'24 SRC",
+        { venue = Just "PLDI-SRC",
+          doi = Nothing,
+          url = "https://systemf.epfl.ch/posters/2024-warblre/",
           title = "Mechanized semantics for ECMAScript regexes",
-          link = Just "https://systemf.epfl.ch/posters/2024-warblre/",
-          authors = ["Noé De Santo"],
+          authors = [("Noé", "De Santo")],
           abstract = Nothing,
-          extra =
-            Just $ Markdown "Poster; [1st place](https://pldi24.sigplan.org/track/pldi-2024-src#winners) (graduate category)."
+          year = 2024,
+          month = 6,
+          extras = Just $ Markdown "Poster; [1st place](https://pldi24.sigplan.org/track/pldi-2024-src#winners) (graduate category).",
+          annote = []
         }
 
 experiences :: [Experience]
@@ -433,7 +414,11 @@ teaching =
         teachingPeriod = Period (Year 2025) Present,
         teachingInstitution = penn,
         classes =
-          [ Class
+          [ Class {
+            className = "CIS-5000 Software Foundations",
+            editions = [Markdown "[2025](https://www.seas.upenn.edu/~cis5000/current/)"]
+          },
+            Class
               { className = "CIS-5521 Compilers",
                 editions =
                   [ Markdown "[2025](https://www.seas.upenn.edu/~cis5521/current/)"
@@ -471,11 +456,11 @@ teaching =
 projects :: [Project]
 projects =
   [ Project
-      { projName = "Warblre — Mechanized Semantics for JavaScript Regexes",
-        projContext = Markdown "Master thesis done at [System F](https://systemf.epfl.ch/), EPFL.",
-        projSupervisors = ["Dr. Aurèle Barrière", "Prof. Clément Pit-Claudel"],
-        projDescription = Markdown "Ported the JavaScript regexes specification to the Coq proof assistant. Care was taken to ensure that the ported specification was faithful to the original paper one, and that one could convince oneself of this fact. Proved key properties of the specification, such as termination. Additionally dis-proved some incorrect simplifications found in the literature about these semantics.",
-        projLinks = [Link "More" "/projects/warblre.html"]
+      { projName = "Chicken-Pi — Mixing Coq with pi-forall",
+        projContext = Markdown "Course project for the [Advanced Programming](https://www.seas.upenn.edu/~cis5520/24fa/) class.",
+        projSupervisors = [],
+        projDescription = Markdown "Extended [pi-forall](https://github.com/sweirich/pi-forall?tab=readme-ov-file) with features taken from the Coq proof-assistant, such as parametric & indexed datatypes, dependent pattern matching, universes and structural recursion. These features should make logically sound, effectively transforming pi-forall into a toy proof-assistant.",
+        projLinks = [Link "Repository" "https://github.com/Ef55/chicken-pi"]
       },
     Project
       { projName = "Exproc — Computation Expressions for Scala",
@@ -497,24 +482,29 @@ projects =
   ]
 
 cvCss :: String
-cvCss = Text.unpack $ render css
+cvCss = LText.unpack $ render css
 
 cvCompiler :: Compiler (Item String)
-cvCompiler =
+cvCompiler = do
+  publications <- mkPublications
   makeItem $
-    Text.unpack $
+    LText.unpack $
       renderText $
         div_ $
           Foldable.fold $
             List.intersperse
               (hr_ [])
               [ section "Education" educationHtml education,
-                section "Publications" publicationHtml publications,
+                section "Publications" publicationGroup publications,
                 section "Research & Industry Experience" experienceHtml experiences,
                 section "Teaching" teachingHtml teaching,
-                section "Research & Software Projects" projectHtml projects
+                section "Other Software Projects" projectHtml projects
               ]
   where
+    publicationGroup :: (String, [Publication]) -> Html ()
+    publicationGroup (name, publications) =
+      div_ (h4_ (toHtml name) <> Foldable.foldMap publicationHtml publications)
+
     section :: Text -> (a -> Html ()) -> [a] -> Html ()
     section name f elems =
       div_
