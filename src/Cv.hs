@@ -389,14 +389,14 @@ experiences =
         period = Period (MonthYear March 2024) (MonthYear July 2024),
         location = Markdown "[System F](https://systemf.epfl.ch/) (EPFL), Switzerland.",
         supervisors = ["Dr. Aurèle Barrière", "Prof. Clément Pit-Claudel"],
-        description = Markdown "Continued work on my Master’s thesis, [Warblre](/projects/warblre.html), a mechanization in Coq of JS regex semantics."
+        description = Markdown "Continued work on my Master’s thesis, [Warblre](/projects/warblre.html), a mechanization in Rcoq of JavaScript regex semantics."
       },
     Experience
       { jobname = "Student Intern",
         period = Period (MonthYear March 2023) (MonthYear August 2023),
         location = Markdown "Oracle Labs, Switzerland.",
         supervisors = ["Dr. Peter Hofer"],
-        description = Markdown "Implemented an almost complete support for the new upcoming foreign functions interface of the Java ecosystem in native-image, an ahead-of-time compiler for Java, and SubstrateVM, its companion runtime. The implementation fully supports dynamic library loading, calls from Java to native functions, and calls from native to Java methods."
+        description = Markdown "Implemented an almost complete support for the (then) new upcoming foreign functions interface of the Java ecosystem in native-image, an ahead-of-time compiler for Java, and SubstrateVM, its companion runtime. The implementation fully supports dynamic library loading, calls from Java to native functions, and calls from native to Java methods."
       },
     Experience
       { jobname = "Research Intern",
@@ -456,10 +456,10 @@ teaching =
 projects :: [Project]
 projects =
   [ Project
-      { projName = "Chicken-Pi — Mixing Coq with pi-forall",
+      { projName = "Chicken-Pi — Mixing Rocq and pi-forall",
         projContext = Markdown "Course project for the [Advanced Programming](https://www.seas.upenn.edu/~cis5520/24fa/) class.",
         projSupervisors = [],
-        projDescription = Markdown "Extended [pi-forall](https://github.com/sweirich/pi-forall?tab=readme-ov-file) with features taken from the Coq proof-assistant, such as parametric & indexed datatypes, dependent pattern matching, universes and structural recursion. These features should make logically sound, effectively transforming pi-forall into a toy proof-assistant.",
+        projDescription = Markdown "Extended [pi-forall](https://github.com/sweirich/pi-forall?tab=readme-ov-file) with features taken from the Rocq proof-assistant, such as parametric & indexed datatypes, dependent pattern matching, universes and structural recursion. These features should make it logically sound, effectively transforming pi-forall into a toy proof-assistant.",
         projLinks = [Link "Repository" "https://github.com/Ef55/chicken-pi"]
       },
     Project

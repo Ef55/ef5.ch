@@ -19,7 +19,7 @@ jobs:
         uses: actions/configure-pages@v5
       - uses: cachix/install-nix-action@v30
       - name: Build website
-        run: nix build -L .
+        run: nix build -L ./.nix
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
