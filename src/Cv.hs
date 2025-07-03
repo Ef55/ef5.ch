@@ -356,9 +356,9 @@ education =
   ]
   where
     bachelor, master, phd :: (String, Period)
-    bachelor = ("Bachelor of Science BSc in Computer and Information Science", Period (Year 2018) (Year 2021))
+    bachelor = ("Bachelor of Science BSc in Computer Science", Period (Year 2018) (Year 2021))
     master = ("Master of Science MSc in Computer Science", Period (Year 2021) (Year 2024))
-    phd = ("PhD student in Computer Science", Period (Year 2024) Present)
+    phd = ("PhD student in Computer and Information Science", Period (Year 2024) Present)
 
 mkPublications :: Compiler [(String, [Publication])]
 mkPublications = do
