@@ -15,6 +15,11 @@ a {
   text-decoration: underline var(--cerulean) 2px;
 }
 
+a.footnote-ref, a.footnote-back {
+  color: var(--cerulean);
+  text-decoration: none;
+}
+
 a:hover {
   color: color-mix(in srgb, black 85%, transparent);
 }
@@ -90,6 +95,16 @@ h3 {
   font-size: 2rem;
 }
 
+figure {
+  border-top: 0.01em solid black;
+  border-bottom: 0.01em solid black;
+  margin: 1em 0 0.5em 0;
+}
+figure > figcaption {
+  margin-bottom: 0.5em;
+  text-align: center;
+  font-style: italic;
+}
 
 @media (max-width: 639px) {
   body {

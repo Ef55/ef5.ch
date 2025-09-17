@@ -1,5 +1,5 @@
 ---
-title: Warblre
+title: Warblre &mdash; A Mechanization of JavaScript Regexes
 inlineCSS: >-
   :root {
     --color-rouge: #E30613;
@@ -117,22 +117,23 @@ inlineCSS: >-
   }
 ---
 
-### A mechanization of ECMAScript regexes
-
-The goal of this project was to mechanize in the Coq proof assistant the regexes
-defined in the
+The goal of this project was to mechanize, in the Rocq^[Or _Coq_ as it was known
+back then.] proof assistant, the semantics of regexes defined in the
 [ECMA-262](https://ecma-international.org/publications-and-standards/standards/ecma-262/)
-standard, the specification follow by the JavaScript language.
+standard (14th edition), the specification followed by the JavaScript language.
 
-The mechanization was designed to be
-**auditable**,
-**executable**,
-**proven-safe**,
-and **faithful**.
-Since it was written in a proof assistant, it also opens the door to mechanized
-proofs about these regexes.
+The mechanization was designed to be:
 
+- **Auditable:** It is written in a way which makes it very easy to compare it
+  to the original paper specification.
+- **Executable:** It can be executed to test the behavior of a regex.
+- **Proven-safe:** It is proven (rather than posited!) that the matching process
+  never triggers runtime errors and always terminates.
+- **Faithful:** It was tested against
+  [Test262](https://github.com/tc39/test262), the standard JavaScript test
+  suite, to further ensure that it conforms to expectations.
 
+<figure>
 <pre class="esh-standalone" style="font-size:0.8em;">
 <code class="coq"><b class="lit"><code>(*&gt;&gt; </code><code>Disjunction</code> :: <code>Alternative</code> | <code>Disjunction</code><code> &lt;&lt;*)</code></b>
 | Disjunction <b class="v">r<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">1</b></b><b class="esh-raised-placeholder">1</b></b></b> <b class="v">r<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">2</b></b><b class="esh-raised-placeholder">2</b></b></b> <b class="esh-non-ascii"><b><b>⇒</b></b></b>
@@ -152,6 +153,8 @@ proofs about these regexes.
     <b class="lit"><code>(*&gt;&gt; </code>e. Return <code>m2(x, c)</code>.<code> &lt;&lt;*)</code></b>
     <b class="kw">else</b> m<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">2</b></b><b class="esh-raised-placeholder">2</b></b> x c): Matcher</code>
 </pre>
+<figcaption>A snippet from the [mechanization](https://github.com/epfl-systemf/Warblre/blob/c88bceb3dbf4bca1f4c479736822b6ecace518bc/mechanization/spec/Semantics.v#L544:L561).</figcaption>
+</figure>
 
 ### Links
 

@@ -15,7 +15,7 @@ $\newcommand{\name}[2]{\underset{#2}{\underlinesegment{\htmlClass{texBoldText}{\
 $
 
 
-I'm currently a PhD candidate at the [University of
+I'm currently a PhD student at the [University of
 Pennsylvania](https://www.cis.upenn.edu/) in Computer Science.
 I was previously at [EPFL](https://www.epfl.ch/schools/ic/) where I obtained
 both my Bachelor's and Master's degree in Computer Science.

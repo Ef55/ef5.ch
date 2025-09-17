@@ -7,6 +7,8 @@ import Data.Time.Format as TimeFormat
 import Data.Time.LocalTime as LocalTime
 import Hakyll hiding (pandocCompiler)
 import Katex
+import Text.Pandoc (Extension (..), readerExtensions)
+import Text.Pandoc.Extensions (extensionsFromList, pandocExtensions)
 
 --------------------------------------------------------------------------------
 
@@ -34,7 +36,14 @@ baseContext = do
 pandocCompiler :: Compiler (Item String)
 pandocCompiler =
   pandocCompilerWithTransform
-    defaultHakyllReaderOptions
+    ( defaultHakyllReaderOptions
+        { readerExtensions =
+            pandocExtensions
+              <> extensionsFromList
+                [ Ext_footnotes
+                ]
+        }
+    )
     defaultHakyllWriterOptions
     localKatex
 

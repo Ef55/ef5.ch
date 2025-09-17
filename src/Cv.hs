@@ -389,7 +389,7 @@ experiences =
         period = Period (MonthYear March 2024) (MonthYear July 2024),
         location = Markdown "[System F](https://systemf.epfl.ch/) (EPFL), Switzerland.",
         supervisors = ["Dr. Aurèle Barrière", "Prof. Clément Pit-Claudel"],
-        description = Markdown "Continued work on my Master’s thesis, [Warblre](/projects/warblre.html), a mechanization in Rcoq of JavaScript regex semantics."
+        description = Markdown "Continued work on my Master’s thesis, [Warblre](/projects/warblre.html), a mechanization in Rocq of JavaScript regex semantics."
       },
     Experience
       { jobname = "Student Intern",
@@ -461,6 +461,13 @@ projects =
         projSupervisors = [],
         projDescription = Markdown "Extended [pi-forall](https://github.com/sweirich/pi-forall?tab=readme-ov-file) with features taken from the Rocq proof-assistant, such as parametric & indexed datatypes, dependent pattern matching, universes and structural recursion. These features should make it logically sound, effectively transforming pi-forall into a toy proof-assistant.",
         projLinks = [Link "Repository" "https://github.com/Ef55/chicken-pi"]
+      },
+    Project
+      { projName = "Warblre — Mechanized Semantics for JavaScript Regexes",
+        projContext = Markdown "Master thesis done at [System F](https://systemf.epfl.ch/), EPFL.",
+        projSupervisors = ["Dr. Aurèle Barrière", "Prof. Clément Pit-Claudel"],
+        projDescription = Markdown "Ported the JavaScript regexes specification to the Rocq proof assistant. Care was taken to ensure that the ported specification was faithful to the original paper one, and that one could convince oneself of this fact. Proved key properties of the specification, such as termination. Additionally dis-proved some incorrect simplifications found in the literature about these semantics.",
+        projLinks = [Link "More" "/projects/warblre.html"]
       },
     Project
       { projName = "Exproc — Computation Expressions for Scala",

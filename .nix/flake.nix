@@ -13,7 +13,10 @@
 
         hpkgs = pkgs.haskell.packages.ghc966;
 
-        iosevka-custom = pkgs.callPackage ./iosevka.nix {};
+        iosevka-custom = pkgs.fetchurl {
+          url = "https://git.ef5.ch/Ef5/Iosevka-custom/releases/download/rolling/iosevka-custom.zip";
+          hash = "sha256-DYwaSNdpKlR9bObR9F492mnnBDaiCSlqHXgIIjzXJ/k=";
+        };
         
         executable = hpkgs.callPackage ./builder.nix {};
 
@@ -33,7 +36,7 @@
             if [ -L "$iosevkatarget" ] ; then
               rm "$iosevkatarget"
             fi
-            ln -s ${iosevka-custom}/share/Iosevka-web "$iosevkatarget"
+            ${pkgs.unzip}/bin/unzip -o ${iosevka-custom} -d "$iosevkatarget"
 
             # Symlink katex
             katexdir=website/katex
@@ -79,6 +82,9 @@
               hlint
 
               pkgs.nodePackages.katex
+
+              pkgs.rclone
+              pkgs.act
             ]);
 
             NIX_PATH = "nixpkgs=" + pkgs.path;
