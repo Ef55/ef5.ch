@@ -9,6 +9,7 @@ import Markdown (Markdown (Markdown))
 import qualified Text.Pandoc as Pandoc
 import Text.Pandoc.Readers.BibTeX
 import qualified Text.Pandoc.Writers as Writers
+import Control.Applicative ((<|>))
 
 data Publication = Publication
   { venue :: Maybe Text,
@@ -38,10 +39,9 @@ parsePublications s =
 
 toPublication :: Pandoc.MetaValue -> Maybe Publication
 toPublication m = do
-  -- ["abstract","author","container-title","doi","id","issue","issued","keyword","publisher","publisher-place","title","type","url","volume"]
   (year, month) <- getTimestamp
   Publication
-    (getFieldText "issue" >>= toPlain)
+    (getFieldText "issue" <|> getFieldText "collection-title" >>= toPlain)
     (getFieldString "doi")
     <$> getFieldString "url"
     <*> (getFieldText "title" >>= toPlain)

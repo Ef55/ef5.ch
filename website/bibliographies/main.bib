@@ -1,37 +1,20 @@
-@article{rebound_2025,
+@inproceedings{rebound_2025,
 author = {De Santo, No\'{e} and Weirich, Stephanie},
-title = {Rebound: Efficient, expressive, and well-scoped binding},
+title = {Rebound: Efficient, Expressive, and Well-Scoped Binding},
 year = {2025},
-issue_date = {October 2025},
+isbn = {9798400721472},
 publisher = {Association for Computing Machinery},
 address = {New York, NY, USA},
-volume = {18},
-number = {Haskell},
 url = {https://doi.org/10.1145/3759164.3759348},
 doi = {10.1145/3759164.3759348},
-abstract = {We introduce the Rebound library that supports well-scoped
-term representations in Haskell and automates the definition
-of substitution, alpha-equivalence, and other operations
-that work with binding structures. The key idea of our de-
-sign is the use of first-class environments that map variables
-to expressions in some new scope. By statically tracking
-scopes, users of this library gain confidence that they have
-correctly maintained the subtle invariants that stem from
-using de Bruijn indices. Behind the scenes, Rebound uses
-environments to optimize the application of substitutions,
-while providing explicit access to these data structures when
-desired. We demonstrate that this library is expressive by
-using it to implement a wide range of language features with
-sophisticated uses of binding and several different operations
-that use this abstract syntax. Our examples include
-pi-forall, a tutorial implementation of a type checker for
-a dependently-typed programming language. Finally, we
-benchmark Rebound to understand its performance characteristics
-and find that it produces faster code than competing libraries.},
-month = oct,
+abstract = {We introduce the Rebound library that supports well-scoped term representations in Haskell and automates the definition of substitution, alpha-equivalence, and other operations that work with binding structures. The key idea of our design is the use of first-class environments that map variables to expressions in some new scope. By statically tracking scopes, users of this library gain confidence that they have correctly maintained the subtle invariants that stem from using de Bruijn indices. Behind the scenes, Rebound uses environments to optimize the application of substitutions, while providing explicit access to these data structures when desired. We demonstrate that this library is expressive by using it to implement a wide range of language features with sophisticated uses of binding and several different operations that use this abstract syntax. Our examples include pi-forall, a tutorial implementation of a type checker for a dependently-typed programming language. Finally, we benchmark Rebound to understand its performance characteristics and find that it produces faster code than competing libraries.},
+booktitle = {Proceedings of the 18th ACM SIGPLAN International Haskell Symposium},
+pages = {38–52},
 numpages = {15},
-keywords = {Dependent Haskell, well-scoped term representation, de Bruijn indices},
-annote = {\href{https://arxiv.org/abs/2509.13261}{Preprint}\href{https://github.com/sweirich/rebound}{Repository}}
+keywords = {Dependent Haskell, de Bruijn indices, well-scoped term representation},
+location = {Singapore, Singapore},
+series = {Haskell},
+annote = {\href{https://dl.acm.org/doi/10.1145/3759164.3759348?cid=99661720121}{PDF}\href{https://github.com/sweirich/rebound}{Repository}}
 }
 
 @article{warblre_2024,
