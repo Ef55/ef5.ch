@@ -5,7 +5,7 @@
 module Cv where
 
 import Bibtex
-import Clay hiding (link, location, name, title, url)
+import Clay hiding (link, location, name, span_, title, url)
 import qualified Clay.Size as Size
 import Clay.Stylesheet (Feature (Feature))
 import qualified Control.Monad as Monad

@@ -6,101 +6,100 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }@input: 
+  outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
+        lib = pkgs.lib;
 
-        hpkgs = pkgs.haskell.packages.ghc966;
+        hpkgs = pkgs.haskellPackages;
 
+        root = ../.;
+        haskellSrc = lib.fileset.toSource {
+          inherit root;
+          fileset = lib.fileset.unions [ ../ef5-ch.cabal ../src ];
+        };
+        websiteSrc = lib.fileset.toSource {
+          inherit root;
+          fileset = lib.fileset.difference ../website (lib.fileset.unions [
+            (lib.fileset.maybeMissing ../website/fonts)
+            (lib.fileset.maybeMissing ../website/katex)
+          ]);
+        };
+
+        # The website builder.
+        ef5-ch = hpkgs.callCabal2nix "ef5-ch" haskellSrc { };
+
+        # Assets used by the website...
         iosevka-custom = pkgs.fetchurl {
           url = "https://git.ef5.ch/Ef5/Iosevka-custom/releases/download/rolling/iosevka-custom.zip";
           hash = "sha256-DYwaSNdpKlR9bObR9F492mnnBDaiCSlqHXgIIjzXJ/k=";
         };
-        
-        executable = hpkgs.callPackage ./builder.nix {};
+        iosevka-web = pkgs.runCommand "iosevka-web" { nativeBuildInputs = [ pkgs.unzip ]; } ''
+          mkdir -p "$out"
+          unzip ${iosevka-custom} -d "$out"
+        '';
 
-        runner = pkgs.writeShellApplication {
-          name = "ef5-runner";
-
-          runtimeInputs = [
-            executable
-            pkgs.nodePackages.katex
-          ];
-
-          text = ''
-            # Symlink Iosevka
-            fontdir=website/fonts
-            mkdir -p "$fontdir"
-            iosevkatarget="$fontdir"/Iosevka-web
-            if [ -L "$iosevkatarget" ] ; then
-              rm "$iosevkatarget"
+        # ... (sym-)linked into the `website` directory.
+        linkAssets = ''
+          link() {
+            if [ -e "$2" ] && [ ! -L "$2" ]; then
+              # Do not overwrite if it already exists, and is not a symlink
+              echo "warning: $2 is not a symlink, leaving it untouched" >&2
+            else
+              ln -sfnT "$1" "$2"
             fi
-            ${pkgs.unzip}/bin/unzip -o ${iosevka-custom} -d "$iosevkatarget"
+          }
+          mkdir -p website/fonts
+          link ${iosevka-web} website/fonts/Iosevka-web
+          link ${pkgs.katex}/lib/node_modules/katex/dist website/katex
+        '';
 
-            # Symlink katex
-            katexdir=website/katex
-            if [ -L "$katexdir" ] ; then
-              rm "$katexdir"
-            fi
-            ln -s ${pkgs.nodePackages.katex}/lib/node_modules/katex/dist "$katexdir"
-
-            ${executable}/bin/site "$@"
-          '';
-        };
-
-        website = pkgs.stdenv.mkDerivation {
+        website = pkgs.stdenvNoCC.mkDerivation {
           name = "ef5.ch";
-          buildInputs = [ ];
-          src = pkgs.nix-gitignore.gitignoreSourcePure ../.gitignore ../.;
-
-          # https://github.com/rpearce/hakyll-nix-template/blob/3d0e857197bed3ffd77f36233452e8eea279c64b/flake.nix#L64
-          LANG = "en_US.UTF-8";
+          src = websiteSrc;
+          nativeBuildInputs = [ ef5-ch pkgs.katex ];
           # https://github.com/jaspervdj/hakyll/issues/614#issuecomment-411520691
-          LOCALE_ARCHIVE = "${pkgs.glibcLocales}/lib/locale/locale-archive";
-
+          LANG = "C.UTF-8";
           buildPhase = ''
-            ${runner}/bin/ef5-runner build --verbose
+            ${linkAssets}
+            site build --verbose
           '';
-
           installPhase = ''
             mkdir -p "$out/dist"
             cp -a _site/. "$out/dist"
           '';
         };
+
+        # The website as a zip archive (a single file), containing _site/.
+        # Sorted entries, fixed timestamps and no extra attributes, so the
+        # archive is reproducible.
+        website-zip = pkgs.runCommand "site.zip" { nativeBuildInputs = [ pkgs.zip ]; } ''
+          cp -r --no-preserve=mode ${website}/dist _site
+          find _site -exec touch -d "1980-01-01T00:00:00Z" {} +
+          find _site -print | LC_ALL=C sort | zip -X -q "$out" -@
+        '';
       in {
-        devShells = {
-          default = pkgs.mkShell {
-            buildInputs = (with hpkgs; [
-              ghc
-              stack
-              hakyll
-              cabal2nix
+        devShells.default = hpkgs.shellFor {
+          packages = _: [ ef5-ch ];
 
-              haskell-language-server
-              ormolu
-              hlint
+          nativeBuildInputs = [
+            hpkgs.cabal-install
+            hpkgs.haskell-language-server
+            hpkgs.ormolu
+            hpkgs.hlint
 
-              pkgs.nodePackages.katex
+            pkgs.katex
 
-              pkgs.rclone
-              pkgs.act
-            ]);
+            pkgs.rclone
+            pkgs.act
+          ];
 
-            NIX_PATH = "nixpkgs=" + pkgs.path;
-          };
-        };
-
-        apps = {
-          default = flake-utils.lib.mkApp {
-            drv = runner;
-            exePath = "/bin/ef5-runner";
-          };
+          shellHook = linkAssets;
         };
 
         packages = {
-          runner = runner;
-          website = website;
+          inherit ef5-ch website website-zip;
           default = website;
         };
       });

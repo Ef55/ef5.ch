@@ -1,0 +1,6 @@
+packages: .
+
+-- Never resolve dependencies from Hackage: inside the nix dev shell, cabal must
+-- use the libraries provided by nix (the same ones the flake builds with).
+-- A missing dependency then fails loudly instead of silently diverging.
+active-repositories: :none

@@ -1,7 +1,0 @@
-snapshot: lts-22.43
-packages:
-- .
-
-nix:
-  enable: true
-  packages: [pkg-config, zlib nodePackages.katex]

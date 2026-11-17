@@ -11,11 +11,11 @@ result
 .envrc
 .direnv
 
-# Stack & Hakyll
-.stack-work
+# Cabal & Hakyll
+dist-newstyle
 _cache
 _site
 
-# Symlinked/generated during build
+# External assets
 website/fonts
 website/katex

@@ -3,6 +3,8 @@ version:            0.1.0.0
 build-type:         Simple
 cabal-version:      >= 1.10
 
+-- Exact versions are pinned by the nix flake; the bounds
+-- below only document API compatibility.
 executable site
   main-is:          Site.hs
   other-modules:
@@ -12,14 +14,13 @@ executable site
     Cv
   hs-source-dirs:   src
   build-depends:
-    ghc == 9.6.6
-    ,  base == 4.*
-    , hakyll == 4.16.*
-    , time == 1.12.*
-    , process == 1.6.*
-    , text == 2.0.*
-    , pandoc == 3.1.*
-    , pandoc-types == 1.23.*
+      base >= 4.18 && < 5
+    , hakyll >= 4.16
+    , time
+    , process
+    , text >= 2.0
+    , pandoc >= 3.1
+    , pandoc-types >= 1.23
     , lucid2
     , clay
     , containers
