@@ -179,31 +179,39 @@ educationHtml (Education inst dipls) =
       div_ [class_ "line"] (span_ (fromString name) <> periodHtml period)
 
 publicationHtml :: Publication -> Html ()
-publicationHtml (Publication venue doi url title authors abstract year month extra annote) =
+publicationHtml (Publication venue doi url title subtitle authors abstract year month extra annote) =
   article_ [class_ "publication"] $ do
-    header_ $ do
-      span_ [class_ "series"] $
-        case venue of
-          Just venue ->
-            fromString
-              ( "["
-                  <> Text.unpack venue
-                  <> "'"
-                  <> show (year `mod` 100)
-                  <> "]"
-              )
-          Nothing -> span_ [class_ "draft-tag"] $ fromString "[Draft]"
-      " "
-      span_ [class_ "title"] $ a_ [href_ url] (fromString $ titlecase $ Text.unpack title)
-    div_ [class_ "metadata"] $ do
-      div_ [class_ "authors"] $ do
-        Foldable.fold $ List.intersperse ", " $ fmap styleAuthor authors
-    -- I don't like to use annote for that, but pandoc/bibtex don't make my life
-    -- easy...
-    Monad.unless (List.null annote) $ div_ [class_ "links"] $ do
-      "["
-      Foldable.fold $ List.intersperse "; " (markdownInlineHtml <$> annote)
-      "]"
+    div_ [class_ "line"] $ do
+      div_ $ do
+        header_ $ do
+          let titleHtml = do
+                fromString $ titlecase $ Text.unpack title
+          let subtitleHtml = do
+                maybeHtml
+                    (\s -> span_ [class_ "subtitle"] (fromString $ titlecase $ Text.unpack s))
+                    subtitle
+          span_ [class_ "title"] $ maybe titleHtml (\u -> (a_ [href_ u] titleHtml) >> subtitleHtml) url
+        div_ [class_ "metadata"] $ do
+          div_ [class_ "authors"] $ do
+            Foldable.fold $ List.intersperse ", " $ fmap styleAuthor authors
+      -- Series and links on the right, as for projects.
+      div_ [class_ "side-links"] $ do
+        span_ [class_ "series"] $
+          case venue of
+            Just venue ->
+              fromString
+                ( "["
+                    <> Text.unpack venue
+                    <> foldMap (\y -> "'" <> show (y `mod` 100)) year
+                    <> "]"
+                )
+            Nothing -> span_ [class_ "draft-tag"] "[Draft]"
+        -- I don't like to use annote for that, but pandoc/bibtex don't make my
+        -- life easy...
+        Monad.unless (List.null annote) $ span_ [class_ "links"] $ do
+          "["
+          Foldable.fold $ List.intersperse "; " (markdownInlineHtml <$> annote)
+          "]"
     maybeHtml (div_ [class_ "extra"] . markdownInlineHtml) extra
     maybeHtml
       ( \abst -> details_ $ do
@@ -313,6 +321,14 @@ css = do
   article ** header ? do
     fontWeight bold
 
+  ".publication" ** ".side-links" |> star ? do
+    marginLeft auto
+  ".publication" ** ".side-links" |> ".series" ? do
+    fontWeight bold
+  ".publication" ** ".subtitle" ? do
+    display block
+    fontWeight normal
+    fontStyle italic
   ".publication" |> details |> ".abstract" |> p # firstChild ? do
     marginTop (Size.em 0)
   ".authors" |> ".author.hg" ? do
@@ -372,12 +388,13 @@ mkPublications = do
       Publication
         { venue = Just "PLDI-SRC",
           doi = Nothing,
-          url = "https://systemf.epfl.ch/posters/2024-warblre/",
+          url = Just "https://systemf.epfl.ch/posters/2024-warblre/",
           title = "Mechanized semantics for ECMAScript regexes",
+          subtitle = Nothing,
           authors = [("Noé", "De Santo")],
           abstract = Nothing,
-          year = 2024,
-          month = 6,
+          year = Just 2024,
+          month = Just 6,
           extras = Just $ Markdown "Poster; [1st place](https://pldi24.sigplan.org/track/pldi-2024-src#winners) (graduate category).",
           annote = []
         }
