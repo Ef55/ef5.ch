@@ -73,6 +73,10 @@ main = do
       route idRoute
       compile copyFileCompiler
 
+    match "icons/**" $ do
+      route idRoute
+      compile copyFileCompiler
+
     match "css/*" $ do
       route idRoute
       compile compressCssCompiler

@@ -15,6 +15,8 @@
 
         <link rel="stylesheet" href="/css/default.css" />
         <link rel="stylesheet" href="/fonts/Iosevka-web/Iosevka-web.css" />
+        <link rel="stylesheet" href="/icons/lucide/lucide.css" />
+        <link rel="stylesheet" href="/icons/simple-icons/simple-icons.css" />
         <link rel="stylesheet" href="/katex/katex.min.css" />
         <script src="/js/main.js"></script>
         $if(inlineCSS)$
@@ -31,13 +33,12 @@
                 <a href="/about.html">About</a>
                 <a href="/cv.html">CV</a>
                 <div class="separator"></div>
-                <a onmouseover="setMailto(this)" title="Allow scripts + hover to reveal email">📧</a>
-                <a href="https://github.com/Ef55"><img src="/images/Github.svg" alt="Github" style="height:1em;"></a>
+                <a onmouseover="setMailto(this)" title="Allow scripts + hover to reveal email" aria-label="Email"><span class="icon icon-mail"></span></a>
+                <a href="https://github.com/Ef55" aria-label="GitHub"><span class="icon si-github"></span></a>
             </nav>
         </header>
 
         <main role="main">
-            <h2>$title$</h2>
             $body$
         </main>
 

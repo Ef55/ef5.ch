@@ -5,7 +5,6 @@ function getEmail () {
 
 async function setMailto (item0) {
   const email = getEmail ();
-  console.log(email);
   const item = item0.cloneNode(true);
   item.setAttribute('href', `mailto:${email}`);
   item.setAttribute('title', email);

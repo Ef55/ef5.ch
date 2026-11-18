@@ -259,7 +259,7 @@ teachingHtml (Teaching role period institution classes) =
       li_ $ do
         toHtml name
         toHtml " ("
-        Foldable.fold (List.intersperse (toHtml ", ") $ markdownHtml <$> editions)
+        Foldable.fold (List.intersperse (toHtml ", ") $ markdownInlineHtml <$> editions)
         toHtml ")"
 
 projectHtml :: Project -> Html ()
@@ -284,10 +284,13 @@ css = do
   ".line" ? do
     display inlineFlex
     width (Size.pct 100)
+    "flex-wrap" -: "wrap"
+    "column-gap" -: "1.5em"
   ".line" |> star # firstChild ? do
     flexGrow 1
   ".header" ? do
     textAlign center
+    marginTop (Size.em 0)
   ul ? do
     listStyleType none
     paddingLeft (Size.ex 2)
@@ -300,8 +303,11 @@ css = do
     right (Size.em 1)
   li |> star ? do
     display inline
+
   hr ? do
-    margin (Size.em 2) (Size.em 0) (Size.em 2) (Size.em 0)
+    margin (Size.em 1.5) (Size.em 0) (Size.em 1.5) (Size.em 0)
+  h4 ? do
+    margin (Size.em 1.2) (Size.em 0) (Size.em 0.4) (Size.em 0)
   ul ? do
     marginTop (Size.ex 0)
     marginBottom (Size.ex 0)
@@ -320,6 +326,8 @@ css = do
     marginBottom (Size.em 1)
   article ** header ? do
     fontWeight bold
+  ".description" |> p ? do
+    margin (Size.em 0.4) (Size.em 0) (Size.em 0) (Size.em 0)
 
   ".publication" ** ".side-links" |> star ? do
     marginLeft auto

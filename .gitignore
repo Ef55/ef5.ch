@@ -6,6 +6,8 @@ old
 
 # Nix
 result
+.nix-cache
+.nix-profiles
 
 # direnv/envrc
 .envrc
@@ -18,4 +20,5 @@ _site
 
 # External assets
 website/fonts
+website/icons
 website/katex

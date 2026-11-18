@@ -44,16 +44,28 @@ buildNpmPackage rec {
     cctools
   ];
 
-  # Sans, normal spacing, no character variants / stylistic sets (smaller
-  # webfonts, see https://github.com/be5invis/Iosevka/issues/1414), weights
-  # Light (300) to ExtraBold (800).
+  # Sans, quasi-proportional spacing, no character variants / stylistic sets
+  # (smaller webfonts, see https://github.com/be5invis/Iosevka/issues/1414),
+  # weights Light (300) to ExtraBold (800).  SemiExtended width (547 instead of
+  # 500) as the only width.
   buildPlans = ''
     [buildPlans.Iosevka-web]
     family = "Iosevka"
-    spacing = "normal"
+    spacing = "quasi-proportional"
     serifs = "sans"
     noCvSs = true
     export-glyph-names = false
+
+    [buildPlans.Iosevka-web.variants]
+    inherits = "ss05"
+
+    [buildPlans.Iosevka-web.variants.design]
+    ampersand = "upper-open"
+
+    [buildPlans.Iosevka-web.widths.SemiExtended]
+    shape = 547
+    menu = 6
+    css = "normal"
 
     [buildPlans.Iosevka-web.weights.Light]
     shape = 300

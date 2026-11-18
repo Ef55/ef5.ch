@@ -81,6 +81,20 @@ footer {
   border: 1px solid;
 }
 
+/* Icons (Lucide, Simple Icons) that follow the text colour: the SVG is used as
+   a mask over a box painted in currentColor. The image comes from the per-icon
+   classes generated with the icons (see .nix/) */
+.icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  background-color: currentColor;
+  mask-position: center;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+}
+
 h1 {
   font-size: inherit;
   border: none;
@@ -106,7 +120,40 @@ figure > figcaption {
   font-style: italic;
 }
 
+/* Justified body text. Browsers break lines greedily, so hyphenation is what
+   keeps the word spacing even. */
+main {
+  line-height: 1.4;
+}
+
+main p, main li {
+  text-align: justify;
+  hyphens: auto;
+  hyphenate-limit-chars: 6 3 2;
+  text-wrap: pretty;
+}
+
+/* Prose lists (e.g. the About page): pandoc's tight lists put the text
+   directly in <li>, so give the items some room to breathe. Only lists
+   directly in <main>, so that the CV's lists (inside <article>s) stay compact. */
+main p + ul {
+  margin-bottom: 0.5em;
+}
+main > ul li + li {
+  margin-top: 0.5em;
+}
+main > ul li > ul {
+  margin-top: 0.5em;
+}
+main > ul li li + li {
+  margin-top: 0.05em;
+}
+
 @media (max-width: 639px) {
+  /* Too narrow for justification: it leaves large gaps between words. */
+  main p, main li {
+    text-align: start;
+  }
   body {
     width: 90%;
     margin: 0;
@@ -119,7 +166,7 @@ figure > figcaption {
 
 @media (min-width: 640px) {
   body {
-    width: 60rem;
+    width: 75ch;
     margin: 0 auto;
     padding: 0;
   }

@@ -23,6 +23,7 @@
           inherit root;
           fileset = lib.fileset.difference ../website (lib.fileset.unions [
             (lib.fileset.maybeMissing ../website/fonts)
+            (lib.fileset.maybeMissing ../website/icons)
             (lib.fileset.maybeMissing ../website/katex)
           ]);
         };
@@ -32,6 +33,18 @@
 
         # Assets used by the website...
         iosevka-web = pkgs.callPackage ./Iosevka.nix { };
+        lucide-icons = pkgs.callPackage ./Lucide.nix {
+          icons = [
+            "mail"
+            "file-text"
+          ];
+        };
+        simple-icons = pkgs.callPackage ./SimpleIcons.nix {
+          icons = [
+            "github"
+            "git"
+          ];
+        };
 
         # ... (sym-)linked into the `website` directory.
         linkAssets = ''
@@ -45,6 +58,9 @@
           }
           mkdir -p website/fonts
           link ${iosevka-web}/share/Iosevka-web website/fonts/Iosevka-web
+          mkdir -p website/icons
+          link ${lucide-icons}/share/lucide website/icons/lucide
+          link ${simple-icons}/share/simple-icons website/icons/simple-icons
           link ${pkgs.katex}/lib/node_modules/katex/dist website/katex
         '';
 
