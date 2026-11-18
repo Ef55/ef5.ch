@@ -37,6 +37,8 @@
           icons = [
             "mail"
             "file-text"
+            "folder-git-2"
+            "info"
           ];
         };
         simple-icons = pkgs.callPackage ./SimpleIcons.nix {

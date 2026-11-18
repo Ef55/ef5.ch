@@ -21,6 +21,8 @@ executable site
     , text >= 2.0
     , pandoc >= 3.1
     , pandoc-types >= 1.23
+    , bibtex >= 0.1
+    , parsec >= 3.1
     , lucid2
     , clay
     , containers

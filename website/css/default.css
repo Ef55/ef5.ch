@@ -51,6 +51,7 @@ nav {
   display: flex;
   flex-wrap: wrap;
   column-gap: 1rem;
+  --icon-size: 1.25em;
 }
 
 body {
@@ -84,11 +85,14 @@ footer {
 /* Icons (Lucide, Simple Icons) that follow the text colour: the SVG is used as
    a mask over a box painted in currentColor. The image comes from the per-icon
    classes generated with the icons (see .nix/) */
+/* Size: set --icon-size on a parent (1em, the text size, by default). The
+   vertical-align centres the icon on lowercase letters at any size (-0.125em
+   at 1em). */
 .icon {
   display: inline-block;
-  width: 1em;
-  height: 1em;
-  vertical-align: -0.125em;
+  width: var(--icon-size, 1em);
+  height: var(--icon-size, 1em);
+  vertical-align: calc(0.375em - var(--icon-size, 1em) / 2);
   background-color: currentColor;
   mask-position: center;
   mask-size: contain;

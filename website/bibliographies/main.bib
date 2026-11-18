@@ -3,7 +3,7 @@ author = {De Santo, No\'{e} and Zdancewic, Steve},
 title = {Mutation You Can Depend On},
 subtitle = {Integrating Mutation, Borrows, and Dependent Types},
 url = {papers/LFmut_DRAFT26.pdf},
-annote = {\href{papers/LFmut_DRAFT26.pdf}{PDF}}
+pdf = {papers/LFmut_DRAFT26.pdf}
 }
 
 @inproceedings{rebound_2025,
@@ -23,7 +23,8 @@ numpages = {15},
 keywords = {Dependent Haskell, de Bruijn indices, well-scoped term representation},
 location = {Singapore, Singapore},
 series = {Haskell},
-annote = {\href{https://dl.acm.org/doi/10.1145/3759164.3759348?cid=99661720121}{PDF}\href{https://github.com/sweirich/rebound}{Repository}}
+pdf = {https://dl.acm.org/doi/10.1145/3759164.3759348?cid=99661720121},
+code = {https://github.com/sweirich/rebound}
 }
 
 @article{warblre_2024,
@@ -45,7 +46,9 @@ been faithfully mechanized in an interactive theorem prover. We highlight
 interesting challenges that arose in the process (including issues of encoding,
 corner cases, and executability), and we document the steps that we took to
 ensure that the result is straightforwardly auditable and that our understanding
-of the specification aligns with existing implementations.\\ We demonstrate the
+of the specification aligns with existing implementations.
+
+We demonstrate the
 usability and versatility of the mechanization through a broad collection of
 analyses, case studies, and experiments: we prove that JavaScript regex matching
 always terminates and is safe (no assertion failures); we identify subtle corner
@@ -54,7 +57,9 @@ extracted from a state-of-the-art regex engine; we show that some classic
 properties described in automata textbooks and used in derivatives-based
 matchers do not hold in JavaScript regexes; and we demonstrate that the cost of
 updating the mechanization to account for changes in the original specification
-is reasonably low.\\ Our mechanization can be extracted to OCaml and JavaScript
+is reasonably low.
+
+Our mechanization can be extracted to OCaml and JavaScript
 and linked with Unicode libraries to produce an executable regex engine that
 passes the relevant parts of the official Test262 conformance test suite.},
 journal = {Proc. ACM Program. Lang.},
@@ -62,5 +67,7 @@ month = aug,
 articleno = {270},
 numpages = {29},
 keywords = {Coq, ECMAScript, Mechanization, Regex},
-annote = {\href{https://dl.acm.org/doi/pdf/10.1145/3674666}{PDF}\href{./projects/warblre.html}{More}}
+pdf = {https://dl.acm.org/doi/pdf/10.1145/3674666},
+code = {https://github.com/LindenRegex/Warblre},
+more = {projects/warblre.html}
 }

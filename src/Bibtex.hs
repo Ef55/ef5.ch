@@ -1,18 +1,20 @@
-module Bibtex (parsePublications, Publication (..)) where
+{-# LANGUAGE NamedFieldPuns #-}
 
-import Control.Monad.Error.Class (MonadError (catchError), throwError)
+module Bibtex (parsePublications, Publication (..), Month (..)) where
+
+import Control.Monad.Error.Class (MonadError, throwError)
+import Data.Bifunctor (first)
+import Data.Char (toLower)
 import qualified Data.List as List
-import Data.List.NonEmpty (NonEmpty ((:|)), toList)
-import qualified Data.Map as Map
-import Data.Text (Text, breakOn, dropEnd, pack, strip, unpack)
-import Markdown (Markdown (Markdown))
-import qualified Text.Pandoc as Pandoc
-import Text.Pandoc.Readers.BibTeX
-import qualified Text.Pandoc.Writers as Writers
-import Control.Applicative ((<|>))
+import Data.Text (Text)
 import qualified Data.Text as Text
-import Text.Read (readMaybe)
+import Markdown (Markdown)
+import qualified Text.BibTeX.Entry as Entry
+import qualified Text.BibTeX.Parse as Parse
+import qualified Text.Pandoc as Pandoc
 import Text.Pandoc.Shared (stringify)
+import qualified Text.ParserCombinators.Parsec as Parsec
+import Text.Read (readMaybe)
 
 data Publication = Publication
   { venue :: Maybe Text,
@@ -20,137 +22,96 @@ data Publication = Publication
     url :: Maybe Text,
     title :: Text,
     subtitle :: Maybe Text,
-    authors :: [(Text, Text)],
-    abstract :: Maybe Markdown,
+    authors :: [Text],
+    abstract :: [Text],
     year :: Maybe Int,
-    month :: Maybe Int,
+    month :: Maybe Month,
     extras :: Maybe Markdown,
-    annote :: [Markdown]
+    -- | Non-standard BibTeX fields.
+    pdf :: Maybe Text,
+    code :: Maybe Text,
+    more :: Maybe Text
   }
   deriving (Show)
 
 parsePublications :: (MonadError [String] m) => String -> m [Publication]
 parsePublications s =
-  case run of
-    Left err -> throwError $ return $ unpack $ Pandoc.renderError err
-    Right (Left errs) -> throwError errs
-    Right (Right r) -> return r
+  case Parsec.parse (Parse.skippingLeadingSpace Parse.file) "bibliography" s of
+    Left err -> throwError [show err]
+    Right entries -> either throwError return (mapM toPublication entries)
+
+toPublication :: Entry.T -> Either [String] Publication
+toPublication entry = first (map (("Publication " <> Entry.identifier entry <> ": ") <>)) $ do
+  title <- required "title" >>= text "title"
+  subtitle <- traverse (text "subtitle") (field "subtitle")
+  authors <- required "author" >>= mapM (text "author" . Entry.flipName) . Parse.splitAuthorList
+  abstract <- maybe (Right []) (paragraphs "abstract") (field "abstract")
+  -- PACMPL-style journals put the conference in `number`, proceedings in `series`.
+  venue <- traverse (text "venue") (field "number" `orElse` field "series")
+  year <- traverse readYear (field "year")
+  month <- traverse readMonth (field "month")
+  return
+    Publication
+      { venue,
+        doi = raw "doi",
+        url = raw "url",
+        title,
+        subtitle,
+        authors,
+        abstract,
+        year,
+        month,
+        extras = Nothing,
+        pdf = raw "pdf",
+        code = raw "code",
+        more = raw "more"
+      }
   where
-    run = Pandoc.runPure $ do
-      Pandoc.Pandoc bib _ <- Pandoc.readBibTeX Pandoc.def (pack s)
-      return $ case Pandoc.lookupMeta (pack "references") bib of
-        Just (Pandoc.MetaList m) -> mapM parseEntry m
-        Nothing -> Right []
-        Just _ -> Left ["Unexpected bibliography structure."]
+    fields = Entry.fields (Entry.lowerCaseFieldNames entry)
+    field name = lookup name fields
+    required name = maybe (Left ["missing field " <> name]) Right (field name)
+    -- URLs and identifiers: used as they are.
+    raw name = Text.strip . Text.pack <$> field name
+    orElse (Just a) _ = Just a
+    orElse Nothing b = b
 
-    -- Report which entry failed
-    parseEntry :: Pandoc.MetaValue -> Either [String] Publication
-    parseEntry m = case toPublication m of
-      Just p -> Right p
-      Nothing ->
-        Left
-          [ "Parsing of publication "
-              <> maybe "<unknown id>" unpack (entryId m)
-              <> " failed (it needs at least a title and authors)."
-          ]
+    readYear y = maybe (Left ["invalid year " <> y]) Right (readMaybe y)
+    -- 1-12, or the name, in full or abbreviated (month = aug).
+    readMonth m = case readMaybe m of
+      Just n | n >= 1 && n <= 12 -> Right (toEnum (n - 1))
+      _ -> maybe (Left ["invalid month " <> m]) Right (List.find (matches m) [minBound ..])
+    matches m month = map toLower m `elem` [name, take 3 name]
+      where
+        name = map toLower (show month)
 
-    entryId :: Pandoc.MetaValue -> Maybe Text
-    entryId (Pandoc.MetaMap m) = case m Map.!? pack "id" of
-      Just (Pandoc.MetaString i) -> Just i
-      Just (Pandoc.MetaInlines is) -> Just (stringify is)
-      _ -> Nothing
-    entryId _ = Nothing
+data Month
+  = January
+  | February
+  | March
+  | April
+  | May
+  | June
+  | July
+  | August
+  | September
+  | October
+  | November
+  | December
+  deriving (Eq, Ord, Show, Enum, Bounded)
 
-toPublication :: Pandoc.MetaValue -> Maybe Publication
-toPublication m = do
-  let (year, month) = getTimestamp
-  (title, subtitle) <- getTitle
-  Publication
-    (getFieldText "issue" <|> getFieldText "collection-title" >>= toPlain)
-    (getFieldString "doi")
-    (getFieldString "url")
-    title
-    subtitle
-    <$> getAuthors
-    <*> return (getFieldText "abstract" >>= toMarkdown)
-    <*> return year
-    <*> return month
-    <*> return Nothing
-    <*> getAnnote
-  where
-    Pandoc.MetaMap m' = m
+-- | A field's TeX as one line of plain text.
+text :: String -> String -> Either [String] Text
+text name s = do
+  ps <- paragraphs name s
+  case ps of
+    [] -> Right ""
+    [p] -> Right p
+    _ -> Left ["unexpected paragraph break in field " <> name]
 
-    rightToMaybe m = case m of
-      Left _ -> Nothing
-      Right v -> Just v
-
-    toPandoc :: [Pandoc.Block] -> Pandoc.Pandoc
-    toPandoc = Pandoc.Pandoc (Pandoc.Meta Map.empty)
-
-    toPlain :: Pandoc.Pandoc -> Maybe Text
-    toPlain m = strip <$> rightToMaybe (Pandoc.runPure $ Writers.writePlain Pandoc.def m)
-
-    toMarkdown :: Pandoc.Pandoc -> Maybe Markdown
-    toMarkdown m = Markdown <$> rightToMaybe (Pandoc.runPure $ Writers.writeMarkdown Pandoc.def m)
-
-    getAnnote :: Maybe [Markdown]
-    getAnnote = do
-      Pandoc.MetaInlines str <- m' Map.!? pack "annote"
-      r <- rightToMaybe $ Pandoc.runPure $ mapM (Writers.writeMarkdown Pandoc.def . toPandoc . return . Pandoc.Para . return) str
-      return (Markdown <$> r)
-
-    getFieldText :: String -> Maybe Pandoc.Pandoc
-    getFieldText name = do
-      Pandoc.MetaInlines str <- m' Map.!? pack name
-      return $ toPandoc (Pandoc.Para <$> toList (asParagraphs str))
-
-    asParagraphs :: [Pandoc.Inline] -> NonEmpty [Pandoc.Inline]
-    asParagraphs [] = [] :| []
-    asParagraphs (h : t) =
-      let b :| bs = asParagraphs t
-       in case h of
-            Pandoc.LineBreak -> [] :| b : bs
-            _ -> (h : b) :| bs
-
-    getFieldString :: String -> Maybe Text
-    getFieldString name = do
-      Pandoc.MetaString str <- m' Map.!? pack name
-      return str
-
-    getAuthors :: Maybe [(Text, Text)]
-    getAuthors = do
-      Pandoc.MetaList ls <- m' Map.!? pack "author"
-      mapM getAuthor ls
-
-    getAuthor :: Pandoc.MetaValue -> Maybe (Text, Text)
-    getAuthor (Pandoc.MetaMap m) = do
-      Pandoc.MetaString first <- m Map.!? pack "given"
-      Pandoc.MetaString last <- m Map.!? pack "family"
-      return (first, last)
-
-    -- Pandoc merges BibTeX's `subtitle` into `title` ("Title: Subtitle"), but
-    -- keeps the main title as `title-short`, which we use to split them again.
-    -- (Pandoc also derives `title-short` from a colon in `title`, so such
-    -- titles get split too.)
-    getTitle :: Maybe (Text, Maybe Text)
-    getTitle = do
-      full <- normalize <$> (getFieldText "title" >>= toPlain)
-      let short = normalize <$> (getFieldText "title-short" >>= toPlain)
-      return $ case short >>= \s -> (,) s <$> Text.stripPrefix s full of
-        Just (s, rest)
-          | Just sub <- Text.stripPrefix ":" rest,
-            not (Text.null (strip sub)) ->
-              (s, Just (strip sub))
-        _ -> (full, Nothing)
-
-    -- The plain writer wraps long lines.
-    normalize :: Text -> Text
-    normalize = Text.unwords . Text.words
-
-    -- "issued" is "YYYY" or "YYYY-MM" (and absent if there is no year).
-    getTimestamp :: (Maybe Int, Maybe Int)
-    getTimestamp = case getFieldString "issued" of
-      Nothing -> (Nothing, Nothing)
-      Just ts ->
-        let (y, m) = breakOn "-" ts
-         in (readMaybe (unpack y), readMaybe (unpack (Text.drop 1 m)))
+-- | A field's TeX as paragraphs of plain text, decoded by pandoc's LaTeX
+-- reader.
+paragraphs :: String -> String -> Either [String] [Text]
+paragraphs name s =
+  case Pandoc.runPure (Pandoc.readLaTeX Pandoc.def (Text.pack s)) of
+    Left err -> Left [Text.unpack (Pandoc.renderError err) <> " in field " <> name]
+    Right (Pandoc.Pandoc _ blocks) -> Right (map stringify blocks)

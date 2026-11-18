@@ -5,7 +5,7 @@
 module Cv where
 
 import Bibtex
-import Clay hiding (link, location, name, span_, title, url)
+import Clay hiding (code, link, location, name, span_, title, url)
 import qualified Clay.Size as Size
 import Clay.Stylesheet (Feature (Feature))
 import qualified Control.Monad as Monad
@@ -37,12 +37,14 @@ import Lucid
     href_,
     id_,
     li_,
+    p_,
     renderText,
     span_,
     style_,
     summary_,
     ul_,
   )
+import Lucid.Base (makeAttributes)
 import Markdown
 import qualified Text.Pandoc as Pandoc
 import Prelude hiding (span, (**))
@@ -51,37 +53,13 @@ import Prelude hiding (span, (**))
 --- Data representation
 --------------------------------------------------------------------------------
 
-data Link = Link Text Text
+-- | Label (tooltip), icon class, URL.
+data Link = Link Text Text Text
 
-data Month
-  = January
-  | February
-  | March
-  | April
-  | May
-  | June
-  | July
-  | August
-  | September
-  | October
-  | November
-  | December
-  deriving (Eq, Ord)
-
-instance Show Month where
-  show m = case m of
-    January -> "January"
-    February -> "February"
-    March -> "March"
-    April -> "April"
-    May -> "May"
-    June -> "June"
-    July -> "July"
-    August -> "August"
-    September -> "September"
-    October -> "October"
-    November -> "November"
-    December -> "December"
+pdfLink, codeLink, moreLink :: Text -> Link
+pdfLink = Link "PDF" "icon-file-text"
+codeLink = Link "Repository" "icon-folder-git-2"
+moreLink = Link "More" "icon-info"
 
 data Date
   = Present
@@ -152,13 +130,22 @@ data Project = Project
 --- Renderers to HTML
 --------------------------------------------------------------------------------
 
-linkHtml :: Link -> Html ()
-linkHtml (Link label link) =
-  a_ [href_ link] $ toHtml label
-
-boxedLinkHtml :: Link -> Html ()
-boxedLinkHtml (Link label link) =
-  a_ [href_ link, class_ "box-link"] $ toHtml label
+-- | Links as icons, with the label as tooltip and accessible name. The icon
+-- classes come with the icons (see .nix/).
+linksHtml :: [Link] -> Html ()
+linksHtml links =
+  Monad.unless (List.null links) $
+    span_ [class_ "links"] (foldMap linkHtml links)
+  where
+    linkHtml :: Link -> Html ()
+    linkHtml (Link label icon url) =
+      a_
+        [ href_ url,
+          class_ "icon-link",
+          makeAttributes "title" label,
+          makeAttributes "aria-label" label
+        ]
+        (span_ [class_ ("icon " <> icon)] "")
 
 institutionHtml :: Institution -> Html ()
 institutionHtml = span_ . fromString . show
@@ -179,7 +166,7 @@ educationHtml (Education inst dipls) =
       div_ [class_ "line"] (span_ (fromString name) <> periodHtml period)
 
 publicationHtml :: Publication -> Html ()
-publicationHtml (Publication venue doi url title subtitle authors abstract year month extra annote) =
+publicationHtml (Publication venue doi url title subtitle authors abstract year month extra pdf code more) =
   article_ [class_ "publication"] $ do
     div_ [class_ "line"] $ do
       div_ $ do
@@ -206,27 +193,16 @@ publicationHtml (Publication venue doi url title subtitle authors abstract year 
                     <> "]"
                 )
             Nothing -> span_ [class_ "draft-tag"] "[Draft]"
-        -- I don't like to use annote for that, but pandoc/bibtex don't make my
-        -- life easy...
-        Monad.unless (List.null annote) $ span_ [class_ "links"] $ do
-          "["
-          Foldable.fold $ List.intersperse "; " (markdownInlineHtml <$> annote)
-          "]"
+        linksHtml (Maybe.catMaybes [pdfLink <$> pdf, codeLink <$> code, moreLink <$> more])
     maybeHtml (div_ [class_ "extra"] . markdownInlineHtml) extra
-    maybeHtml
-      ( \abst -> details_ $ do
-          summary_ "Abstract"
-          div_ [class_ "abstract"] (markdownHtml abst)
-      )
-      abstract
+    Monad.unless (List.null abstract) $
+      details_ $ do
+        summary_ "Abstract"
+        div_ [class_ "abstract"] (foldMap (p_ . toHtml) abstract)
   where
-    styleAuthor :: (Text, Text) -> Html ()
-    styleAuthor (fname, lname) =
-      let name = (Text.unpack fname <> " " <> Text.unpack lname)
-       in span_ [class_ (if isMe name then "author hg" else "author")] $ fromString name
-
-    isMe :: String -> Bool
-    isMe name = name == "Noé De Santo"
+    styleAuthor :: Text -> Html ()
+    styleAuthor name =
+      span_ [class_ (if name == "Noé De Santo" then "author hg" else "author")] (toHtml name)
 
 supervisorsHtml :: [String] -> Html ()
 supervisorsHtml supervisors =
@@ -271,8 +247,7 @@ projectHtml (Project name ctx supers desc links) =
         div_ [class_ "metadata"] $ do
           div_ [class_ "context"] (markdownInlineHtml ctx)
           supervisorsHtml supers
-      div_ [class_ "side-links"] $ do
-        Foldable.foldMap boxedLinkHtml links
+      div_ [class_ "side-links"] (linksHtml links)
     div_ [class_ "description"] (markdownHtml desc)
 
 --------------------------------------------------------------------------------
@@ -312,15 +287,6 @@ css = do
     marginTop (Size.ex 0)
     marginBottom (Size.ex 0)
 
-  ".box-link" ? do
-    "color" -: envyColor
-    "background-color" -: transparentEnvyColor
-    fontWeight (weight 500)
-    textDecoration none
-    padding (Size.px 0) (Size.px 4) (Size.px 0) (Size.px 4)
-    borderRadius (Size.px 4) (Size.px 4) (Size.px 4) (Size.px 4)
-    width fitContent
-
   article ? do
     marginTop (Size.em 1)
     marginBottom (Size.em 1)
@@ -329,8 +295,6 @@ css = do
   ".description" |> p ? do
     margin (Size.em 0.4) (Size.em 0) (Size.em 0) (Size.em 0)
 
-  ".publication" ** ".side-links" |> star ? do
-    marginLeft auto
   ".publication" ** ".side-links" |> ".series" ? do
     fontWeight bold
   ".publication" ** ".subtitle" ? do
@@ -357,13 +321,18 @@ css = do
     display flex
     flexDirection column
     "row-gap" -: "0.05em"
-  ".side-links" |> a ? do
+  ".side-links" |> star ? do
     marginLeft auto
-  where
-    envyColor :: Text
-    envyColor = "var(--envy)"
-    transparentEnvyColor :: Text
-    transparentEnvyColor = "color-mix(in srgb, var(--envy) 20%, transparent)"
+  -- Publication and project links as icons (PDF, repository, ...).
+  ".links" ? do
+    display inlineFlex
+    "gap" -: "0.5em"
+    "--icon-size" -: "1.25em"
+  ".icon-link" ? do
+    "color" -: "var(--cerulean)"
+    textDecoration none
+  ".icon-link" # hover ? do
+    "color" -: "black"
 
 --------------------------------------------------------------------------------
 --- Actual CV
@@ -399,12 +368,14 @@ mkPublications = do
           url = Just "https://systemf.epfl.ch/posters/2024-warblre/",
           title = "Mechanized semantics for ECMAScript regexes",
           subtitle = Nothing,
-          authors = [("Noé", "De Santo")],
-          abstract = Nothing,
+          authors = ["Noé De Santo"],
+          abstract = [],
           year = Just 2024,
-          month = Just 6,
+          month = Just June,
           extras = Just $ Markdown "Poster; [1st place](https://pldi24.sigplan.org/track/pldi-2024-src#winners) (graduate category).",
-          annote = []
+          pdf = Nothing,
+          code = Nothing,
+          more = Nothing
         }
 
 experiences :: [Experience]
@@ -485,21 +456,14 @@ projects =
         projContext = Markdown "Course project for the [Advanced Programming](https://www.seas.upenn.edu/~cis5520/24fa/) class.",
         projSupervisors = [],
         projDescription = Markdown "Extended [pi-forall](https://github.com/sweirich/pi-forall?tab=readme-ov-file) with features taken from the Rocq proof-assistant, such as parametric & indexed datatypes, dependent pattern matching, universes and structural recursion. These features should make it logically sound, effectively transforming pi-forall into a toy proof-assistant.",
-        projLinks = [Link "Repository" "https://github.com/Ef55/chicken-pi"]
-      },
-    Project
-      { projName = "Warblre — Mechanized Semantics for JavaScript Regexes",
-        projContext = Markdown "Master thesis done at [System F](https://systemf.epfl.ch/), EPFL.",
-        projSupervisors = ["Dr. Aurèle Barrière", "Prof. Clément Pit-Claudel"],
-        projDescription = Markdown "Ported the JavaScript regexes specification to the Rocq proof assistant. Care was taken to ensure that the ported specification was faithful to the original paper one, and that one could convince oneself of this fact. Proved key properties of the specification, such as termination. Additionally dis-proved some incorrect simplifications found in the literature about these semantics.",
-        projLinks = [Link "More" "/projects/warblre.html"]
+        projLinks = [codeLink "https://github.com/Ef55/chicken-pi"]
       },
     Project
       { projName = "Exproc — Computation Expressions for Scala",
         projContext = Markdown "Semester project done at [LAMP](https://www.epfl.ch/labs/lamp), EPFL.",
         projSupervisors = ["Anatolii Kmetiuk"],
         projDescription = Markdown "Implemented an adaptation of F#’s computation expressions in Scala 3 using its meta-programming facilities. Demonstrated how it could be used to make more natural and practical domain specific languages.",
-        projLinks = [Link "Repository" "https://github.com/Ef55/scala-expression-processor"]
+        projLinks = [codeLink "https://github.com/Ef55/scala-expression-processor"]
       },
     Project
       { projName = "Verified System F in Stainless",
@@ -507,8 +471,8 @@ projects =
         projSupervisors = [],
         projDescription = Markdown "Implemented an interpreter for System F in the subset of Scala supported by [Stainless](https://github.com/epfl-lara/stainless), a verification tool for Scala. Then proved the main properties of the implemented calculus, most notably that it satisfies progress and preservation. This project used to be the second largest one (in number of verification conditions) done in Stainless. It is also still used as a benchmark for Stainless, as part of the [bolts](https://github.com/epfl-lara/bolts) repository.",
         projLinks =
-          [ Link "Repository" "https://github.com/Ef55/stainless-stlc",
-            Link "Report" "https://github.com/Ef55/Reports-and-presentations/blob/main/stainless_systemf/build/report.pdf"
+          [ codeLink "https://github.com/Ef55/stainless-stlc",
+            Link "Report" "icon-file-text" "https://github.com/Ef55/Reports-and-presentations/blob/main/stainless_systemf/build/report.pdf"
           ]
       }
   ]
