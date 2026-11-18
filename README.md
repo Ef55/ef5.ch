@@ -8,6 +8,15 @@ nix build .nix              # Website in result/dist/
 nix build .nix#website-zip  # Website as a zip archive (containing _site/), at result
 ```
 
+## Deploy
+
+Using the nix flake:
+```
+nix run .nix#deploy -- <rclone remote>:<path>
+# Also accepts extra flags
+nix run .nix#deploy -- <rclone remote>:<path> --dry-run
+```
+
 ## Develop
 
 Using the provided nix setup:
