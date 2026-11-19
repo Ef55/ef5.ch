@@ -30,8 +30,17 @@ baseContext = do
     ( constField "siteName" "Noé De Santo"
         `mappend` constField "sourcesRepository" "https://github.com/Ef55/ef5.ch"
         `mappend` constField "buildDate" date
+        `mappend` showTitleField
         `mappend` defaultContext
     )
+
+-- | `titleShown` is set when a page's metadata has `showTitle: true`.
+-- This ensures that hakyll's `if` are included iff it is true (as opposed to
+-- iff it is set)
+showTitleField :: Context String
+showTitleField = field "titleShown" $ \item -> do
+  value <- getMetadataField (itemIdentifier item) "showTitle"
+  if value == Just "true" then return "true" else noResult "showTitle is not true"
 
 pandocCompiler :: Compiler (Item String)
 pandocCompiler =

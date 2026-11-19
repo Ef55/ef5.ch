@@ -30,7 +30,6 @@
             </h1>
             <nav>
                 <a href="/">/</a>
-                <a href="/about.html">About</a>
                 <a href="/cv.html">CV</a>
                 <div class="separator"></div>
                 <a onmouseover="setMailto(this)" title="Allow scripts + hover to reveal email" aria-label="Email"><span class="icon icon-mail"></span></a>
@@ -39,6 +38,9 @@
         </header>
 
         <main role="main">
+            $if(titleShown)$
+            <h2>$title$</h2>
+            $endif$
             $body$
         </main>
 

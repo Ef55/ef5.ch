@@ -166,8 +166,8 @@ educationHtml (Education inst dipls) =
       div_ [class_ "line"] (span_ (fromString name) <> periodHtml period)
 
 publicationHtml :: Publication -> Html ()
-publicationHtml (Publication venue doi url title subtitle authors abstract year month extra pdf code more) =
-  article_ [class_ "publication"] $ do
+publicationHtml (Publication key venue doi url title subtitle authors abstract year month extra pdf code more) =
+  article_ [class_ "publication", id_ key] $ do
     div_ [class_ "line"] $ do
       div_ $ do
         header_ $ do
@@ -363,7 +363,8 @@ mkPublications = do
   where
     warblrePoster =
       Publication
-        { venue = Just "PLDI-SRC",
+        { key = "warblre_poster_2024",
+          venue = Just "PLDI-SRC",
           doi = Nothing,
           url = Just "https://systemf.epfl.ch/posters/2024-warblre/",
           title = "Mechanized semantics for ECMAScript regexes",

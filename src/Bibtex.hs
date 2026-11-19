@@ -17,7 +17,8 @@ import qualified Text.ParserCombinators.Parsec as Parsec
 import Text.Read (readMaybe)
 
 data Publication = Publication
-  { venue :: Maybe Text,
+  { key :: Text,
+    venue :: Maybe Text,
     doi :: Maybe Text,
     url :: Maybe Text,
     title :: Text,
@@ -52,7 +53,8 @@ toPublication entry = first (map (("Publication " <> Entry.identifier entry <> "
   month <- traverse readMonth (field "month")
   return
     Publication
-      { venue,
+      { key = Text.pack (Entry.identifier entry),
+        venue,
         doi = raw "doi",
         url = raw "url",
         title,

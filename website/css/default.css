@@ -137,20 +137,21 @@ main p, main li {
   text-wrap: pretty;
 }
 
-/* Prose lists (e.g. the About page): pandoc's tight lists put the text
-   directly in <li>, so give the items some room to breathe. Only lists
-   directly in <main>, so that the CV's lists (inside <article>s) stay compact. */
-main p + ul {
+
+ul, ol {
+  padding-left: 1em;
+}
+
+/* Lists with room to breathe, for prose items. Pandoc can't put a class on a
+   list, so wrap it in a fenced div:  ::: breathe  …  ::: */
+p + .breathe > ul {
   margin-bottom: 0.5em;
 }
-main > ul li + li {
+.breathe > ul li + li {
   margin-top: 0.5em;
 }
-main > ul li > ul {
+.breathe > ul li > ul {
   margin-top: 0.5em;
-}
-main > ul li li + li {
-  margin-top: 0.05em;
 }
 
 @media (max-width: 639px) {

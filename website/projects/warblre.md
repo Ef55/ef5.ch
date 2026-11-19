@@ -1,5 +1,6 @@
 ---
 title: Warblre &mdash; A Mechanization of JavaScript Regexes
+showTitle: true
 inlineCSS: >-
   :root {
     --color-rouge: #E30613;
@@ -124,6 +125,7 @@ standard (14th edition), the specification followed by the JavaScript language.
 
 The mechanization was designed to be:
 
+::: breathe
 - **Auditable:** It is written in a way which makes it very easy to compare it
   to the original paper specification.
 - **Executable:** It can be executed to test the behavior of a regex.
@@ -132,6 +134,7 @@ The mechanization was designed to be:
 - **Faithful:** It was tested against
   [Test262](https://github.com/tc39/test262), the standard JavaScript test
   suite, to further ensure that it conforms to expectations.
+:::
 
 <figure>
 <pre class="esh-standalone" style="font-size:0.8em;">
