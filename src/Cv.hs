@@ -5,7 +5,7 @@
 module Cv where
 
 import Bibtex
-import Clay hiding (code, link, location, name, span_, title, url)
+import Clay hiding (code, data_, link, location, name, span_, title, type_, url)
 import qualified Clay.Media as Media
 import qualified Clay.Size as Size
 import Clay.Stylesheet (Feature (Feature))
@@ -28,7 +28,9 @@ import Lucid
     ToHtml (..),
     a_,
     article_,
+    button_,
     class_,
+    data_,
     details_,
     div_,
     h3_,
@@ -38,11 +40,13 @@ import Lucid
     href_,
     id_,
     li_,
+    onclick_,
     p_,
     renderText,
     span_,
     style_,
     summary_,
+    type_,
     ul_,
   )
 import Lucid.Base (makeAttributes)
@@ -134,19 +138,35 @@ data Project = Project
 -- | Links as icons, with the label as tooltip and accessible name. The icon
 -- classes come with the icons (see .nix/).
 linksHtml :: [Link] -> Html ()
-linksHtml links =
-  Monad.unless (List.null links) $
-    span_ [class_ "links"] (foldMap linkHtml links)
-  where
-    linkHtml :: Link -> Html ()
-    linkHtml (Link label icon url) =
-      a_
-        [ href_ url,
-          class_ "icon-link",
-          makeAttributes "title" label,
-          makeAttributes "aria-label" label
-        ]
-        (span_ [class_ ("icon " <> icon)] "")
+linksHtml = iconsHtml . fmap linkHtml
+
+linkHtml :: Link -> Html ()
+linkHtml (Link label icon url) =
+  a_
+    [ href_ url,
+      class_ "icon-link",
+      makeAttributes "title" label,
+      makeAttributes "aria-label" label
+    ]
+    (span_ [class_ ("icon " <> icon)] "")
+
+-- | A button copying a BibTeX citation to the clipboard (see js/main.js).
+citeHtml :: Text -> Html ()
+citeHtml bib =
+  button_
+    [ type_ "button",
+      class_ "icon-link",
+      makeAttributes "title" "Copy BibTeX",
+      makeAttributes "aria-label" "Copy BibTeX",
+      data_ "bibtex" bib,
+      onclick_ "copyBibtex(this)"
+    ]
+    (span_ [class_ "icon icon-quote"] "")
+
+iconsHtml :: [Html ()] -> Html ()
+iconsHtml icons =
+  Monad.unless (List.null icons) $
+    span_ [class_ "links"] (Foldable.fold icons)
 
 institutionHtml :: Institution -> Html ()
 institutionHtml = span_ . fromString . show
@@ -167,7 +187,7 @@ educationHtml (Education inst dipls) =
       div_ [class_ "line"] (span_ (fromString name) <> periodHtml period)
 
 publicationHtml :: Publication -> Html ()
-publicationHtml (Publication key venue doi url title subtitle authors abstract year month extra pdf code more) =
+publicationHtml (Publication key venue doi url title subtitle authors abstract year month extra pdf code more bibtex) =
   article_ [class_ "publication", id_ key] $ do
     div_ [class_ "line"] $ do
       div_ $ do
@@ -194,7 +214,9 @@ publicationHtml (Publication key venue doi url title subtitle authors abstract y
                     <> "]"
                 )
             Nothing -> span_ [class_ "draft-tag"] "[Draft]"
-        linksHtml (Maybe.catMaybes [pdfLink <$> pdf, codeLink <$> code, moreLink <$> more])
+        iconsHtml $
+          fmap linkHtml (Maybe.catMaybes [pdfLink <$> pdf, codeLink <$> code, moreLink <$> more])
+            ++ foldMap (pure . citeHtml) bibtex
     maybeHtml (div_ [class_ "extra"] . markdownInlineHtml) extra
     Monad.unless (List.null abstract) $
       details_ $ do
@@ -343,6 +365,13 @@ css = do
     textDecoration none
   ".icon-link" # hover ? do
     "color" -: "black"
+  -- The copy-BibTeX button, looking like the links next to it.
+  button # ".icon-link" ? do
+    "background" -: "none"
+    "border" -: "none"
+    "padding" -: "0"
+    "font" -: "inherit"
+    cursor pointer
 
 --------------------------------------------------------------------------------
 --- Actual CV
@@ -386,7 +415,8 @@ mkPublications = do
           extras = Just $ Markdown "Poster; [1st place](https://pldi24.sigplan.org/track/pldi-2024-src#winners) (graduate category).",
           pdf = Nothing,
           code = Nothing,
-          more = Nothing
+          more = Nothing,
+          bibtex = Nothing
         }
 
 experiences :: [Experience]

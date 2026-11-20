@@ -99,6 +99,33 @@ footer {
   mask-repeat: no-repeat;
 }
 
+/* A short message shown above an element for a moment: see js/main.js. Aligned
+   on the element's right edge, so that it does not stick out of the page when
+   the element is on the right. */
+/* The popup is placed relative to its parent. :where() gives this rule no
+   specificity, so a parent that is already positioned (sticky, absolute, ...),
+   and hence already anchors the popup, keeps its position. */
+:where(:has(> .copy-popup)) {
+  position: relative;
+}
+.copy-popup {
+  position: absolute;
+  bottom: calc(100% + 0.4em);
+  right: 0;
+  padding: 0.2em 0.5em;
+  border-radius: 0.3em;
+  background: black;
+  color: white;
+  font-size: 1.2rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.copy-popup.shown {
+  opacity: 1;
+}
+
 h1 {
   font-size: inherit;
   border: none;

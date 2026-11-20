@@ -39,6 +39,7 @@
             "file-text"
             "folder-git-2"
             "info"
+            "quote"
           ];
         };
         simple-icons = pkgs.callPackage ./SimpleIcons.nix {

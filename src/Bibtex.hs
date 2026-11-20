@@ -31,7 +31,9 @@ data Publication = Publication
     -- | Non-standard BibTeX fields.
     pdf :: Maybe Text,
     code :: Maybe Text,
-    more :: Maybe Text
+    more :: Maybe Text,
+    -- | The entry as BibTeX, for citing it.
+    bibtex :: Maybe Text
   }
   deriving (Show)
 
@@ -66,7 +68,8 @@ toPublication entry = first (map (("Publication " <> Entry.identifier entry <> "
         extras = Nothing,
         pdf = raw "pdf",
         code = raw "code",
-        more = raw "more"
+        more = raw "more",
+        bibtex = Just (citation entry)
       }
   where
     fields = Entry.fields (Entry.lowerCaseFieldNames entry)
@@ -100,6 +103,22 @@ data Month
   | November
   | December
   deriving (Eq, Ord, Show, Enum, Bounded)
+
+-- | The entry as BibTeX, without the "custom" fields and the abstract
+citation :: Entry.T -> Text
+citation entry =
+  Text.pack $
+    "@" <> Entry.entryType entry <> "{" <> Entry.identifier entry <> ",\n"
+      <> concatMap fieldLine (filter (keep . fst) (Entry.fields entry))
+      <> "}"
+  where
+    keep name = map toLower name `notElem` ["pdf", "code", "more", "abstract", "shorttitle"]
+    fieldLine (name, value) = "  " <> name <> " = " <> fieldValue name value <> ",\n"
+    -- Month macros (month = aug) must stay bare for BibTeX to expand them.
+    fieldValue name value
+      | map toLower name == "month" && map toLower value `elem` monthMacros = value
+      | otherwise = "{" <> value <> "}"
+    monthMacros = [map toLower (take 3 (show m)) | m <- [minBound .. maxBound :: Month]]
 
 -- | A field's TeX as one line of plain text.
 text :: String -> String -> Either [String] Text
