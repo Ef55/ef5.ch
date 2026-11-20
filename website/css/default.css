@@ -140,6 +140,11 @@ h3 {
   font-size: 2rem;
 }
 
+/* Code keeps its lines: scroll them rather than the whole page. */
+pre {
+  overflow-x: auto;
+}
+
 figure {
   border-top: 0.01em solid black;
   border-bottom: 0.01em solid black;

@@ -4,14 +4,19 @@ function getEmail () {
 }
 
 async function setMailto (item0) {
-  const email = getEmail ();
+  const email = getEmail();
   const item = item0.cloneNode(true);
   item.setAttribute('href', `mailto:${email}`);
   item.setAttribute('title', email);
   item.removeAttribute('onmouseover');
+  item.removeAttribute('onfocus');
+  item.removeAttribute('tabindex'); // Focusable anyway, now that it has an href
   item.removeAttribute('alt');
-  // We replace the node to force an update of the link preview
+  // We replace the node to force an update of the link preview; the copy
+  // takes the focus over
+  const focused = document.activeElement === item0;
   item0.replaceWith(item);
+  if (focused) item.focus();
 }
 
 // CV: copy a publication's BibTeX (in data-bibtex), and say so in a small

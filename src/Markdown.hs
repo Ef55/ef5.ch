@@ -1,6 +1,7 @@
 module Markdown where
 
 import Data.Text (Text)
+import qualified Data.Text as Text
 import Lucid
   ( Html,
     ToHtml (..),
@@ -20,7 +21,7 @@ markdownToHtml i (Markdown s) =
               _ -> md
         Pandoc.writeHtml5String Pandoc.def md'
    in case r of
-        Left err -> error "Pandoc error"
+        Left err -> error ("Pandoc error: " <> Text.unpack (Pandoc.renderError err))
         Right r -> toHtmlRaw r
 
 maybeHtml :: (a -> Html ()) -> Maybe a -> Html ()

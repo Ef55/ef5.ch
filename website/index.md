@@ -5,6 +5,7 @@ inlineCSS: >-
   .me {
     float: right;
     width: 30%;
+    height: auto;
     margin: 0 0em 0.5em 1.5em;
   }
   .gap {
@@ -12,7 +13,7 @@ inlineCSS: >-
   }
 ---
 
-<img src="/images/me.png" class="me" alt="">
+<img src="/images/me.webp" class="me" width="512" height="512" alt="Picture of Noé">
 
 Hi! I'm **Noé Eric De Santo**.
 
@@ -26,7 +27,7 @@ the reasoning power of a proof assistant.
 
 <div class="gap"></div>
 
-More generally, my two main centers of interest (research-wise) are:
+More generally, my two main research interests are:
 
 ::: breathe
 - **Programming Languages**: these might seem like tools toward a goal, but I
@@ -36,7 +37,7 @@ More generally, my two main centers of interest (research-wise) are:
     meant for humans into efficient code meant for machines;
   - _Type systems_, which allow programmers to express properties of their
     code, and machines to check that these properties hold;
-  - _Semantics_, i.e. what programs actually mean, which are the foundations
+  - _Semantics_, i.e., what programs actually mean, which are the foundations
     that allow to reason precisely about a program's behavior;
 - and **Software Verification**: correct programs are surprisingly hard to craft,
   so we should make sure they are doing what we expect (and want) them to do.
@@ -46,4 +47,4 @@ More generally, my two main centers of interest (research-wise) are:
 
 I was previously at [EPFL](https://www.epfl.ch/schools/ic/) where I obtained my
 Master's degree in Computer Science (as well as my Bachelor's before that).
-My thesis was on [mechanized semantics for JavaScript regexes](projects/warblre.html).
+My thesis was on [mechanized semantics for JavaScript regexes](/projects/warblre.html).

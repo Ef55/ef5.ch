@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 import Cv
 import Data.Functor ((<&>))
-import Data.Monoid (mappend)
+import qualified Data.List as List
 import Data.Time as Time
 import Data.Time.Format as TimeFormat
 import Data.Time.LocalTime as LocalTime
@@ -21,7 +21,7 @@ configuration =
 getCurrentDate :: IO String
 getCurrentDate =
   LocalTime.getZonedTime
-    <&> TimeFormat.formatTime Time.defaultTimeLocale "%d/%m/%y"
+    <&> TimeFormat.formatTime Time.defaultTimeLocale "%Y-%m-%d"
 
 baseContext :: IO (Context String)
 baseContext = do
@@ -31,6 +31,7 @@ baseContext = do
         `mappend` constField "sourcesRepository" "https://github.com/Ef55/ef5.ch"
         `mappend` constField "buildDate" date
         `mappend` showTitleField
+        `mappend` hasMathField
         `mappend` defaultContext
     )
 
@@ -41,6 +42,14 @@ showTitleField :: Context String
 showTitleField = field "titleShown" $ \item -> do
   value <- getMetadataField (itemIdentifier item) "showTitle"
   if value == Just "true" then return "true" else noResult "showTitle is not true"
+
+-- | `hasMath` is set when the page contains math rendered by KaTeX (see
+-- Katex.hs), so that only those pages load KaTeX's stylesheet.
+hasMathField :: Context String
+hasMathField = field "hasMath" $ \item ->
+  if "class=\"katex\"" `List.isInfixOf` itemBody item
+    then return "true"
+    else noResult "no math"
 
 pandocCompiler :: Compiler (Item String)
 pandocCompiler =
@@ -105,7 +114,7 @@ main = do
       compile copyFileCompiler
 
     -- Main pages
-    match (fromList ["index.md", "about.md"]) $ do
+    match "index.md" $ do
       route $ setExtension "html"
       compile $
         pandocCompiler

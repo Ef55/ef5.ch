@@ -1,5 +1,4 @@
 {-# LANGUAGE ExtendedDefaultRules #-}
--- {-# LANGUAGE MultilineStrings #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Cv where
@@ -11,6 +10,7 @@ import qualified Clay.Size as Size
 import Clay.Stylesheet (Feature (Feature))
 import qualified Control.Monad as Monad
 import Control.Monad.Error.Class (MonadError (catchError))
+import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import qualified Data.Foldable1 as Foldable1
 import qualified Data.List as List
@@ -83,10 +83,12 @@ instance Show Date where
 data Period = Period {from :: Date, to :: Date}
 
 instance Show Period where
-  show (Period l@(MonthYear lm ly) r@(MonthYear rm ry))
+  show (Period (MonthYear lm ly) (MonthYear rm ry))
     | ly == ry = show lm ++ "-" ++ show rm ++ " " ++ show ly
   show (Period l r) = show (trim l) ++ "-" ++ show (trim r)
 
+-- | The period spanning both: from the first's start to the second's end.
+comb :: Period -> Period -> Period
 comb (Period l _) (Period _ r) = Period l r
 
 data Institution = Institution
@@ -168,12 +170,19 @@ iconsHtml icons =
   Monad.unless (List.null icons) $
     span_ [class_ "links"] (Foldable.fold icons)
 
+-- | A name as an anchor id: lowercase words separated by dashes, e.g.
+-- "Research & Industry Experience" -> "research-industry-experience".
+slug :: Text -> Text
+slug = Text.intercalate "-" . Text.words . Text.map dash . Text.toLower
+  where
+    dash c = if Char.isAlphaNum c then c else ' '
+
 institutionHtml :: Institution -> Html ()
 institutionHtml = span_ . fromString . show
 
 educationHtml :: Education -> Html ()
 educationHtml (Education inst dipls) =
-  article_ [class_ "education", id_ (fromString $ instname inst)] $ do
+  article_ [class_ "education", id_ (slug $ Text.pack $ instname inst)] $ do
     header_ [class_ "line"] $ do
       institutionHtml inst
       periodHtml (Foldable1.foldl1 comb $ fmap snd dipls)
@@ -198,7 +207,9 @@ publicationHtml (Publication key venue doi url title subtitle authors abstract y
                 maybeHtml
                     (\s -> span_ [class_ "subtitle"] (fromString $ titlecase $ Text.unpack s))
                     subtitle
-          span_ [class_ "title"] $ maybe titleHtml (\u -> (a_ [href_ u] titleHtml) >> subtitleHtml) url
+          span_ [class_ "title"] $ do
+            maybe titleHtml (\u -> a_ [href_ u] titleHtml) url
+            subtitleHtml
         div_ [class_ "metadata"] $ do
           div_ [class_ "authors"] $ do
             Foldable.fold $ List.intersperse ", " $ fmap styleAuthor authors
@@ -292,6 +303,8 @@ css = do
   ul ? do
     listStyleType none
     paddingLeft (Size.ex 2)
+    marginTop (Size.ex 0)
+    marginBottom (Size.ex 0)
   ul |> li # before ? do
     content (stringContent "* ")
     fontWeight bold
@@ -306,9 +319,6 @@ css = do
     margin (Size.em 1.5) (Size.em 0) (Size.em 1.5) (Size.em 0)
   h4 ? do
     margin (Size.em 1.2) (Size.em 0) (Size.em 0.4) (Size.em 0)
-  ul ? do
-    marginTop (Size.ex 0)
-    marginBottom (Size.ex 0)
 
   article ? do
     marginTop (Size.em 1)
@@ -333,8 +343,8 @@ css = do
   ".draft-tag" ? do
     "background" -: "color-mix(in srgb, gray 60%, transparent)"
   ".abstract" ? do
-    marginLeft (Size.em 3 @/ 16)
-    paddingLeft (Size.em 1 @/ 2)
+    marginLeft (Size.em 0.1875)
+    paddingLeft (Size.em 0.5)
     "border-left" -: "var(--cerulean) solid 1px"
   summary # hover ? do
     cursor pointer
@@ -363,7 +373,10 @@ css = do
   ".icon-link" ? do
     "color" -: "var(--cerulean)"
     textDecoration none
+  -- Same on keyboard focus as on hover (the browser's focus ring stays).
   ".icon-link" # hover ? do
+    "color" -: "black"
+  ".icon-link" # pseudo "focus-visible" ? do
     "color" -: "black"
   -- The copy-BibTeX button, looking like the links next to it.
   button # ".icon-link" ? do
@@ -433,7 +446,7 @@ experiences =
         period = Period (MonthYear March 2023) (MonthYear August 2023),
         location = Markdown "Oracle Labs, Switzerland.",
         supervisors = ["Dr. Peter Hofer"],
-        description = Markdown "Implemented an almost complete support for the (then) new upcoming foreign functions interface of the Java ecosystem in native-image, an ahead-of-time compiler for Java, and SubstrateVM, its companion runtime. The implementation fully supports dynamic library loading, calls from Java to native functions, and calls from native to Java methods."
+        description = Markdown "Implemented almost complete support for the (then) upcoming foreign function interface of the Java ecosystem in native-image, an ahead-of-time compiler for Java, and SubstrateVM, its companion runtime. The implementation fully supports dynamic library loading, calls from Java to native functions, and calls from native to Java methods."
       },
     Experience
       { jobname = "Research Intern",
@@ -451,10 +464,12 @@ teaching =
         teachingPeriod = Period (Year 2025) Present,
         teachingInstitution = penn,
         classes =
-          [ Class {
-            className = "CIS-5000 Software Foundations",
-            editions = [Markdown "[2025](https://www.seas.upenn.edu/~cis5000/current/)"]
-          },
+          [ Class
+              { className = "CIS-5000 Software Foundations",
+                editions =
+                  [ Markdown "[2025](https://www.seas.upenn.edu/~cis5000/current/)"
+                  ]
+              },
             Class
               { className = "CIS-5521 Compilers",
                 editions =
@@ -496,7 +511,7 @@ projects =
       { projName = "Chicken-Pi — Mixing Rocq and pi-forall",
         projContext = Markdown "Course project for the [Advanced Programming](https://www.seas.upenn.edu/~cis5520/24fa/) class.",
         projSupervisors = [],
-        projDescription = Markdown "Extended [pi-forall](https://github.com/sweirich/pi-forall?tab=readme-ov-file) with features taken from the Rocq proof-assistant, such as parametric & indexed datatypes, dependent pattern matching, universes and structural recursion. These features should make it logically sound, effectively transforming pi-forall into a toy proof-assistant.",
+        projDescription = Markdown "Extended [pi-forall](https://github.com/sweirich/pi-forall?tab=readme-ov-file) with features taken from the Rocq proof assistant, such as parametric & indexed datatypes, dependent pattern matching, universes and structural recursion. These features should make it logically sound, effectively transforming pi-forall into a toy proof assistant.",
         projLinks = [codeLink "https://github.com/Ef55/chicken-pi"]
       },
     Project
@@ -519,7 +534,7 @@ projects =
   ]
 
 cvCss :: String
-cvCss = LText.unpack $ render css
+cvCss = LText.unpack $ renderWith compact [] css
 
 cvCompiler :: Compiler (Item String)
 cvCompiler = do
@@ -545,5 +560,5 @@ cvCompiler = do
     section :: Text -> (a -> Html ()) -> [a] -> Html ()
     section name f elems =
       div_
-        [id_ name]
+        [id_ (slug name)]
         (h3_ [class_ "header"] (toHtml name) <> Foldable.foldMap f elems)

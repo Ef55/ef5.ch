@@ -62,7 +62,6 @@ inlineCSS: >-
   }
   code .lit {
       color: var(--hl-literate);
-      font-family: var(--font-sans);
       font-style: italic;
       margin: 0.35rem 0 0.15rem 0;
       display: inline-block;
@@ -156,16 +155,16 @@ The mechanization was designed to be:
     <b class="lit"><code>(*&gt;&gt; </code>e. Return <code>m2(x, c)</code>.<code> &lt;&lt;*)</code></b>
     <b class="kw">else</b> m<b class="esh-raised"><b class="esh-raised-contents"><b style="bottom:-0.25em">2</b></b><b class="esh-raised-placeholder">2</b></b> x c): Matcher</code>
 </pre>
-<figcaption>A snippet from the [mechanization](https://github.com/epfl-systemf/Warblre/blob/c88bceb3dbf4bca1f4c479736822b6ecace518bc/mechanization/spec/Semantics.v#L544:L561).</figcaption>
+<figcaption>A snippet from the [mechanization](https://github.com/LindenRegex/Warblre/blob/c88bceb3dbf4bca1f4c479736822b6ecace518bc/mechanization/spec/Semantics.v#L544:L561).</figcaption>
 </figure>
 
 ### Links
 
-- Warblre's [repository](https://github.com/epfl-systemf/Warblre);
+- Warblre's [repository](https://github.com/LindenRegex/Warblre);
 - The Warblre [paper](https://doi.org/10.1145/3674666);
 - The [poster](https://systemf.epfl.ch/posters/2024-warblre/) I presented at the
   [student research competition](https://pldi24.sigplan.org/track/pldi-2024-src)
-  @PLDI'24;
+  \@PLDI'24;
 - My [Master's
   thesis](https://infoscience.epfl.ch/entities/publication/9b1d1db8-70ad-4735-b6a4-6eccafcaa161),
   even though I'd recommend reading the paper instead;

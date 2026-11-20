@@ -2,14 +2,13 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <meta http-equiv="x-ua-compatible" content="ie=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         $if(description)$
         <meta name="description" content="$description$">
-        $else$
-        <meta name="robots" content="noindex">
-        $endif$
         <meta name="robots" content="nosnippet, noimageindex, nofollow">
+        $else$
+        <meta name="robots" content="noindex, nosnippet, noimageindex, nofollow">
+        $endif$
 
         <title>$siteName$ - $title$</title>
 
@@ -17,8 +16,10 @@
         <link rel="stylesheet" href="/fonts/Iosevka-web/Iosevka-web.css" />
         <link rel="stylesheet" href="/icons/lucide/lucide.css" />
         <link rel="stylesheet" href="/icons/simple-icons/simple-icons.css" />
+        $if(hasMath)$
         <link rel="stylesheet" href="/katex/katex.min.css" />
-        <script src="/js/main.js"></script>
+        $endif$
+        <script src="/js/main.js" defer></script>
         $if(inlineCSS)$
         <style>$inlineCSS$</style>
         $endif$
@@ -26,18 +27,18 @@
     <body>
         <header>
             <h1>
-                <a href="/">$siteName$</a>
+                <a tabindex="-1" href="/">$siteName$</a>
             </h1>
             <nav>
                 <a href="/">/</a>
                 <a href="/cv.html">CV</a>
                 <div class="separator"></div>
-                <a onmouseover="setMailto(this)" title="Allow scripts + hover to reveal email" aria-label="Email"><span class="icon icon-mail"></span></a>
+                <a tabindex="0" onmouseover="setMailto(this)" onfocus="setMailto(this)" title="Allow scripts + hover/focus to reveal email" aria-label="Email"><span class="icon icon-mail"></span></a>
                 <a href="https://github.com/Ef55" aria-label="GitHub"><span class="icon si-github"></span></a>
             </nav>
         </header>
 
-        <main role="main">
+        <main>
             $if(titleShown)$
             <h2>$title$</h2>
             $endif$
