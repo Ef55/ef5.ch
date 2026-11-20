@@ -6,6 +6,7 @@ module Cv where
 
 import Bibtex
 import Clay hiding (code, link, location, name, span_, title, url)
+import qualified Clay.Media as Media
 import qualified Clay.Size as Size
 import Clay.Stylesheet (Feature (Feature))
 import qualified Control.Monad as Monad
@@ -323,6 +324,15 @@ css = do
     "row-gap" -: "0.05em"
   ".side-links" |> star ? do
     marginLeft auto
+  -- On narrow screens: keep venue + links on one line
+  query Media.screen [Media.maxWidth (Size.px 639)] $ do
+    ".side-links" ? do
+      flexDirection row
+      "flex-wrap" -: "wrap"
+      alignItems center
+      "column-gap" -: "0.75em"
+    ".side-links" |> star ? do
+      marginLeft (Size.px 0)
   -- Publication and project links as icons (PDF, repository, ...).
   ".links" ? do
     display inlineFlex
