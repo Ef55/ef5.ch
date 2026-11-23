@@ -20,9 +20,9 @@
         <link rel="stylesheet" href="/katex/katex.min.css" />
         $endif$
         <script src="/js/main.js" defer></script>
-        $if(inlineCSS)$
-        <style>$inlineCSS$</style>
-        $endif$
+        $for(stylesheets)$
+        <style>$body$</style>
+        $endfor$
     </head>
     <body>
         <header>
@@ -31,6 +31,7 @@
             </h1>
             <nav>
                 <a href="/">/</a>
+                <a href="/research.html">Research</a>
                 <a href="/cv.html">CV</a>
                 <div class="separator"></div>
                 <a tabindex="0" onmouseover="setMailto(this)" onfocus="setMailto(this)" title="Allow scripts + hover/focus to reveal email" aria-label="Email"><span class="icon icon-mail"></span></a>

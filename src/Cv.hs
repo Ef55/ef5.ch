@@ -4,8 +4,8 @@
 module Cv where
 
 import Bibtex
+import Icons
 import Clay hiding (code, data_, link, location, name, span_, title, type_, url)
-import qualified Clay.Media as Media
 import qualified Clay.Size as Size
 import Clay.Stylesheet (Feature (Feature))
 import qualified Control.Monad as Monad
@@ -16,40 +16,27 @@ import qualified Data.Foldable1 as Foldable1
 import qualified Data.List as List
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty as NonEmpty
-import qualified Data.Maybe as Maybe
 import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as LText
-import Data.Text.Titlecase (titlecase)
 import Hakyll hiding (Markdown, trim)
 import Lucid
   ( Html,
     ToHtml (..),
-    a_,
     article_,
-    button_,
     class_,
-    data_,
-    details_,
     div_,
     h3_,
-    h4_,
     header_,
     hr_,
-    href_,
     id_,
     li_,
-    onclick_,
-    p_,
     renderText,
     span_,
     style_,
-    summary_,
-    type_,
     ul_,
   )
-import Lucid.Base (makeAttributes)
 import Markdown
 import qualified Text.Pandoc as Pandoc
 import Prelude hiding (span, (**))
@@ -57,14 +44,6 @@ import Prelude hiding (span, (**))
 --------------------------------------------------------------------------------
 --- Data representation
 --------------------------------------------------------------------------------
-
--- | Label (tooltip), icon class, URL.
-data Link = Link Text Text Text
-
-pdfLink, codeLink, moreLink :: Text -> Link
-pdfLink = Link "PDF" "icon-file-text"
-codeLink = Link "Repository" "icon-folder-git-2"
-moreLink = Link "More" "icon-info"
 
 data Date
   = Present
@@ -134,39 +113,6 @@ data Project = Project
 --- Renderers to HTML
 --------------------------------------------------------------------------------
 
--- | Links as icons, with the label as tooltip and accessible name. The icon
--- classes come with the icons (see .nix/).
-linksHtml :: [Link] -> Html ()
-linksHtml = iconsHtml . fmap linkHtml
-
-linkHtml :: Link -> Html ()
-linkHtml (Link label icon url) =
-  a_
-    [ href_ url,
-      class_ "icon-link",
-      makeAttributes "title" label,
-      makeAttributes "aria-label" label
-    ]
-    (span_ [class_ ("icon " <> icon)] "")
-
--- | A button copying a BibTeX citation to the clipboard (see js/main.js).
-citeHtml :: Text -> Html ()
-citeHtml bib =
-  button_
-    [ type_ "button",
-      class_ "icon-link",
-      makeAttributes "title" "Copy BibTeX",
-      makeAttributes "aria-label" "Copy BibTeX",
-      data_ "bibtex" bib,
-      onclick_ "copyBibtex(this)"
-    ]
-    (span_ [class_ "icon icon-quote"] "")
-
-iconsHtml :: [Html ()] -> Html ()
-iconsHtml icons =
-  Monad.unless (List.null icons) $
-    span_ [class_ "links"] (Foldable.fold icons)
-
 -- | A name as an anchor id: lowercase words separated by dashes, e.g.
 -- "Research & Industry Experience" -> "research-industry-experience".
 slug :: Text -> Text
@@ -191,49 +137,6 @@ educationHtml (Education inst dipls) =
     diplomaHtml :: (String, Period) -> Html ()
     diplomaHtml (name, period) =
       div_ [class_ "line"] (span_ (fromString name) <> periodHtml period)
-
-publicationHtml :: Publication -> Html ()
-publicationHtml (Publication key venue doi url title subtitle authors abstract year month extra pdf code more bibtex) =
-  article_ [class_ "publication", id_ key] $ do
-    div_ [class_ "line"] $ do
-      div_ $ do
-        header_ $ do
-          let titleHtml = do
-                fromString $ titlecase $ Text.unpack title
-          let subtitleHtml = do
-                maybeHtml
-                  (\s -> span_ [class_ "subtitle"] (fromString $ titlecase $ Text.unpack s))
-                  subtitle
-          span_ [class_ "title"] $ do
-            maybe titleHtml (\u -> a_ [href_ u] titleHtml) url
-            subtitleHtml
-        div_ [class_ "metadata"] $ do
-          div_ [class_ "authors"] $ do
-            Foldable.fold $ List.intersperse ", " $ fmap styleAuthor authors
-      -- Series and links on the right, as for projects.
-      div_ [class_ "side-links"] $ do
-        span_ [class_ "series"] $
-          case venue of
-            Just venue ->
-              fromString
-                ( "["
-                    <> Text.unpack venue
-                    <> foldMap (\y -> "'" <> show (y `mod` 100)) year
-                    <> "]"
-                )
-            Nothing -> span_ [class_ "draft-tag"] "[Draft]"
-        iconsHtml $
-          fmap linkHtml (Maybe.catMaybes [pdfLink <$> pdf, codeLink <$> code, moreLink <$> more])
-            ++ foldMap (pure . citeHtml) bibtex
-    maybeHtml (div_ [class_ "extra"] . markdownInlineHtml) extra
-    Monad.unless (List.null abstract) $
-      details_ $ do
-        summary_ "Abstract"
-        div_ [class_ "abstract"] (foldMap (p_ . toHtml) abstract)
-  where
-    styleAuthor :: Text -> Html ()
-    styleAuthor name =
-      span_ [class_ (if name == "Noé De Santo" then "author hg" else "author")] (toHtml name)
 
 supervisorsHtml :: [String] -> Html ()
 supervisorsHtml supervisors =
@@ -301,15 +204,9 @@ projectHtml (Project name ctx supers desc links) =
 --- Styling
 --------------------------------------------------------------------------------
 
-css :: Css
-css = do
-  ".line" ? do
-    display inlineFlex
-    width (Size.pct 100)
-    "flex-wrap" -: "wrap"
-    "column-gap" -: "1.5em"
-  ".line" |> star # firstChild ? do
-    flexGrow 1
+-- | The CV's stylesheet. These will get scoped under `.cv`.
+cvCss :: Css
+cvCss = do
   ".header" ? do
     textAlign center
     marginTop (Size.em 0)
@@ -333,8 +230,6 @@ css = do
 
   hr ? do
     margin (Size.em 1.5) (Size.em 0) (Size.em 1.5) (Size.em 0)
-  h4 ? do
-    margin (Size.em 1.2) (Size.em 0) (Size.em 0.4) (Size.em 0)
 
   article ? do
     marginTop (Size.em 1)
@@ -344,63 +239,6 @@ css = do
   ".description" |> p ? do
     margin (Size.em 0.4) (Size.em 0) (Size.em 0) (Size.em 0)
 
-  ".publication" ** ".side-links" |> ".series" ? do
-    fontWeight bold
-  ".publication" ** ".subtitle" ? do
-    display block
-    fontWeight normal
-    fontStyle italic
-  ".publication" |> details |> ".abstract" |> p # firstChild ? do
-    marginTop (Size.em 0)
-  ".authors" |> ".author.hg" ? do
-    fontWeight bold
-    fontStyle italic
-    "color" -: "var(--cerulean)"
-  ".draft-tag" ? do
-    "background" -: "color-mix(in srgb, gray 60%, transparent)"
-  ".abstract" ? do
-    marginLeft (Size.em 0.1875)
-    paddingLeft (Size.em 0.5)
-    "border-left" -: "var(--cerulean) solid 1px"
-  summary # hover ? do
-    cursor pointer
-    "color" -: "var(--cerulean)"
-
-  ".side-links" ? do
-    display flex
-    flexDirection column
-    "row-gap" -: "0.05em"
-  ".side-links" |> star ? do
-    marginLeft auto
-  -- On narrow screens: keep venue + links on one line
-  query Media.screen [Media.maxWidth (Size.px 639)] $ do
-    ".side-links" ? do
-      flexDirection row
-      "flex-wrap" -: "wrap"
-      alignItems center
-      "column-gap" -: "0.75em"
-    ".side-links" |> star ? do
-      marginLeft (Size.px 0)
-  -- Publication and project links as icons (PDF, repository, ...).
-  ".links" ? do
-    display inlineFlex
-    "gap" -: "0.5em"
-    "--icon-size" -: "1.25em"
-  ".icon-link" ? do
-    "color" -: "var(--cerulean)"
-    textDecoration none
-  -- Same on keyboard focus as on hover (the browser's focus ring stays).
-  ".icon-link" # hover ? do
-    "color" -: "black"
-  ".icon-link" # pseudo "focus-visible" ? do
-    "color" -: "black"
-  -- The copy-BibTeX button, looking like the links next to it.
-  button # ".icon-link" ? do
-    "background" -: "none"
-    "border" -: "none"
-    "padding" -: "0"
-    "font" -: "inherit"
-    cursor pointer
   ".lecturing" ** ".lecture-name" ? do
     "font-style" -: "italic"
 
@@ -553,8 +391,8 @@ projects =
       }
   ]
 
-cvCss :: String
-cvCss = LText.unpack $ renderWith compact [] css
+publicationsHtml :: Compiler String
+publicationsHtml = LText.unpack . renderText . publicationListHtml <$> mkPublications
 
 cvCompiler :: Compiler (Item String)
 cvCompiler = do
@@ -562,21 +400,17 @@ cvCompiler = do
   makeItem $
     LText.unpack $
       renderText $
-        div_ $
+        div_ [class_ "cv"] $
           Foldable.fold $
             List.intersperse
               (hr_ [])
               [ section "Education" educationHtml education,
-                section "Publications" publicationGroup publications,
+                section "Publications" publicationListHtml [publications],
                 section "Research & Industry Experience" experienceHtml experiences,
                 section "Teaching" teachingHtml teaching,
                 section "Other Software Projects" projectHtml projects
               ]
   where
-    publicationGroup :: (String, [Publication]) -> Html ()
-    publicationGroup (name, publications) =
-      div_ (h4_ (toHtml name) <> Foldable.foldMap publicationHtml publications)
-
     section :: Text -> (a -> Html ()) -> [a] -> Html ()
     section name f elems =
       div_

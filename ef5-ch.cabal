@@ -11,6 +11,7 @@ executable site
     Katex
     Markdown
     Bibtex
+    Icons
     Cv
   hs-source-dirs:   src
   build-depends:

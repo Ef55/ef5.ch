@@ -21,27 +21,9 @@ I'm a PhD student at the [University of
 Pennsylvania](https://www.cis.upenn.edu/) in Computer Science,
 advised by [Steve Zdancewic](https://www.cis.upenn.edu/~stevez/).
 
-My [current research](/cv.html#lfmut_2026) focuses on a type system combining in-place updates with
+My [current research](/research.html#lfmut_2026) focuses on a type system combining in-place updates with
 dependent types. The goal is to combine efficient mutation-based programming with
 the reasoning power of a proof assistant.
-
-<div class="gap"></div>
-
-More generally, my two main research interests are:
-
-::: breathe
-- **Programming Languages**: these might seem like tools toward a goal, but I
-  see them as fascinating objects to be studied. Some topics that I'm interested in
-  are:
-  - _Compilers_, which have the delicate task of transforming readable code
-    meant for humans into efficient code meant for machines;
-  - _Type systems_, which allow programmers to express properties of their
-    code, and machines to check that these properties hold;
-  - _Semantics_, i.e., what programs actually mean, which are the foundations
-    that allow to reason precisely about a program's behavior;
-- and **Software Verification**: correct programs are surprisingly hard to craft,
-  so we should make sure they are doing what we expect (and want) them to do.
-:::
 
 <div class="gap"></div>
 

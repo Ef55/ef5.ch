@@ -212,3 +212,63 @@ p + .breathe > ul {
     padding: 1.2rem 0;
   }
 }
+
+/* Components shared by the CV and the publication list (see src/Bibtex.hs,
+   src/Cv.hs). */
+
+/* A row whose first item takes the remaining space, e.g. a title on the left
+   and a date or links on the right. */
+.line {
+  display: inline-flex;
+  width: 100%;
+  flex-wrap: wrap;
+  column-gap: 1.5em;
+}
+.line > *:first-child {
+  flex-grow: 1;
+}
+
+/* Series and links, on the right of a publication or project. */
+.side-links {
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.05em;
+}
+.side-links > * {
+  margin-left: auto;
+}
+/* On narrow screens: keep venue + links on one line. */
+@media screen and (max-width: 639px) {
+  .side-links {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.75em;
+  }
+  .side-links > * {
+    margin-left: 0;
+  }
+}
+
+/* Publication and project links as icons (PDF, repository, ...). */
+.links {
+  display: inline-flex;
+  gap: 0.5em;
+  --icon-size: 1.25em;
+}
+.icon-link {
+  color: var(--cerulean);
+  text-decoration: none;
+}
+/* Same on keyboard focus as on hover (the browser's focus ring stays). */
+.icon-link:hover, .icon-link:focus-visible {
+  color: black;
+}
+/* The copy-BibTeX button, mimicking an icon. */
+button.icon-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}

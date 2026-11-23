@@ -1,11 +1,16 @@
 --------------------------------------------------------------------------------
+import Bibtex (publicationsCss)
+import Clay (Css, compact, renderWith, (?))
 import Cv
 import Data.Functor ((<&>))
-import qualified Data.List as List
+import qualified Data.Maybe as Maybe
+import Data.String (fromString)
+import qualified Data.Text as Text
+import qualified Data.Text.Lazy as LText
 import Data.Time as Time
 import Data.Time.Format as TimeFormat
 import Data.Time.LocalTime as LocalTime
-import Hakyll hiding (pandocCompiler)
+import Hakyll
 import Katex
 import Text.Pandoc (Extension (..), readerExtensions)
 import Text.Pandoc.Extensions (extensionsFromList, pandocExtensions)
@@ -32,6 +37,8 @@ baseContext = do
         `mappend` constField "buildDate" date
         `mappend` showTitleField
         `mappend` hasMathField
+        `mappend` stylesheetsField
+        `mappend` publicationsField
         `mappend` defaultContext
     )
 
@@ -47,23 +54,63 @@ showTitleField = field "titleShown" $ \item -> do
 -- Katex.hs), so that only those pages load KaTeX's stylesheet.
 hasMathField :: Context String
 hasMathField = field "hasMath" $ \item ->
-  if "class=\"katex\"" `List.isInfixOf` itemBody item
+  if "katex" `elem` classesIn (itemBody item)
     then return "true"
     else noResult "no math"
 
-pandocCompiler :: Compiler (Item String)
-pandocCompiler =
-  pandocCompilerWithTransform
-    ( defaultHakyllReaderOptions
-        { readerExtensions =
-            pandocExtensions
-              <> extensionsFromList
-                [ Ext_footnotes
-                ]
-        }
-    )
-    defaultHakyllWriterOptions
-    localKatex
+-- | Stylesheets of generated components, by the class of their root element.
+-- A page gets a component's stylesheet if (and only if) it has an element with
+-- that class.
+componentStylesheets :: [(String, Css)]
+componentStylesheets =
+  [ ("publications", publicationsCss),
+    ("cv", cvCss)
+  ]
+
+-- | Generate this page's custom CSS, based on the components it uses, and
+-- some user provided CSS.
+stylesheetsField :: Context String
+stylesheetsField = listFieldWith "stylesheets" (bodyField "body") $ \item -> do
+  let classes = classesIn (itemBody item)
+      components =
+        [ renderWith compact [] (fromString ('.' : root) ? css)
+        | (root, css) <- componentStylesheets,
+          root `elem` classes
+        ]
+  own <- getMetadataField (itemIdentifier item) "inlineCSS"
+  mapM makeItem (map LText.unpack components ++ Maybe.maybeToList own)
+
+-- | All the classes used in some HTML.
+classesIn :: String -> [String]
+classesIn =
+  map Text.unpack
+    . concatMap (Text.words . Text.takeWhile (/= '"'))
+    . drop 1
+    . Text.splitOn "class=\""
+    . Text.pack
+
+-- | `$publications$` expands to the publication list.
+publicationsField :: Context String
+publicationsField = field "publications" $ \_ -> publicationsHtml
+
+-- | Markdown pages are first applied as templates (so they can use fields such
+-- as `$publications$`; a literal `$` must be written `$$`), then rendered by
+-- Pandoc (including Katex).
+markdownCompiler :: Context String -> Compiler (Item String)
+markdownCompiler context =
+  getResourceBody
+    >>= applyAsTemplate context
+    >>= renderPandocWithTransform
+      ( defaultHakyllReaderOptions
+          { readerExtensions =
+              pandocExtensions
+                <> extensionsFromList
+                  [ Ext_footnotes
+                  ]
+          }
+      )
+      defaultHakyllWriterOptions
+      localKatex
 
 main :: IO ()
 main = do
@@ -114,10 +161,10 @@ main = do
       compile copyFileCompiler
 
     -- Main pages
-    match "index.md" $ do
+    match ("index.md" .||. "research.md") $ do
       route $ setExtension "html"
       compile $
-        pandocCompiler
+        markdownCompiler context
           >>= loadAndApplyTemplate "templates/default.html" context
           >>= relativizeUrls
 
@@ -128,7 +175,6 @@ main = do
           >>= loadAndApplyTemplate
             "templates/default.html"
             ( constField "title" "Curriculum Vitae"
-                <> constField "inlineCSS" cvCss
                 <> context
             )
           >>= relativizeUrls
@@ -137,7 +183,7 @@ main = do
     match "projects/*" $ do
       route $ setExtension "html"
       compile $
-        pandocCompiler
+        markdownCompiler context
           >>= loadAndApplyTemplate "templates/default.html" context
           >>= relativizeUrls
 
