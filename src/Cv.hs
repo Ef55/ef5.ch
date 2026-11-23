@@ -118,12 +118,9 @@ data Class = Class
     editions :: [Markdown]
   }
 
-data Teaching = Teaching
-  { teachingRole :: String,
-    teachingPeriod :: Period,
-    teachingInstitution :: Institution,
-    classes :: [Class]
-  }
+data Teaching
+  = TA String Institution [Class]
+  | Lecturer String [(String, Class, Institution)]
 
 data Project = Project
   { projName :: String,
@@ -205,8 +202,8 @@ publicationHtml (Publication key venue doi url title subtitle authors abstract y
                 fromString $ titlecase $ Text.unpack title
           let subtitleHtml = do
                 maybeHtml
-                    (\s -> span_ [class_ "subtitle"] (fromString $ titlecase $ Text.unpack s))
-                    subtitle
+                  (\s -> span_ [class_ "subtitle"] (fromString $ titlecase $ Text.unpack s))
+                  subtitle
           span_ [class_ "title"] $ do
             maybe titleHtml (\u -> a_ [href_ u] titleHtml) url
             subtitleHtml
@@ -255,11 +252,10 @@ experienceHtml (Experience name period loc supers desc) =
     div_ [class_ "description"] (markdownHtml desc)
 
 teachingHtml :: Teaching -> Html ()
-teachingHtml (Teaching role period institution classes) =
+teachingHtml (TA role institution classes) =
   article_ [class_ "teaching"] $ do
-    header_ [class_ "line"] $ do
+    header_ $ do
       span_ $ toHtml role
-      span_ $ toHtml (show period)
     div_ [class_ "metadata"] $ do
       div_ [class_ "location"] (institutionHtml institution)
     div_ [class_ "classes"] (ul_ (Foldable.foldMap classHtml classes))
@@ -270,6 +266,23 @@ teachingHtml (Teaching role period institution classes) =
         toHtml name
         toHtml " ("
         Foldable.fold (List.intersperse (toHtml ", ") $ markdownInlineHtml <$> editions)
+        toHtml ")"
+teachingHtml (Lecturer role ls) =
+  article_ [class_ "lecturing"] $ do
+    header_ $ do
+      span_ $ toHtml role
+    ul_ $ foldMap lectureHtml ls
+  where
+    lectureHtml :: (String, Class, Institution) -> Html ()
+    lectureHtml (title, (Class className [year]), (Institution inst _ _)) = li_ $ do
+      div_ [class_ "lecture-name"] $
+        toHtml title
+      div_ $ do
+        toHtml className
+        toHtml ", "
+        toHtml inst
+        toHtml " ("
+        markdownInlineHtml year
         toHtml ")"
 
 projectHtml :: Project -> Html ()
@@ -314,6 +327,9 @@ css = do
     right (Size.em 1)
   li |> star ? do
     display inline
+  -- Lectures: the details go on the line after the title.
+  ".lecture-name" |+ Clay.div ? do
+    display block
 
   hr ? do
     margin (Size.em 1.5) (Size.em 0) (Size.em 1.5) (Size.em 0)
@@ -385,14 +401,18 @@ css = do
     "padding" -: "0"
     "font" -: "inherit"
     cursor pointer
+  ".lecturing" ** ".lecture-name" ? do
+    "font-style" -: "italic"
+
 
 --------------------------------------------------------------------------------
 --- Actual CV
 --------------------------------------------------------------------------------
 
-epfl, penn :: Institution
+epfl, penn, hessso :: Institution
 epfl = Institution "EPFL" "Lausanne" "Switzerland"
 penn = Institution "University of Pennsylvania" "Philadelphia" "USA"
+hessso = Institution "HES-SO" "-" "Switzerland"
 
 education :: [Education]
 education =
@@ -459,50 +479,50 @@ experiences =
 
 teaching :: [Teaching]
 teaching =
-  [ Teaching
-      { teachingRole = "Teaching Assistant",
-        teachingPeriod = Period (Year 2025) Present,
-        teachingInstitution = penn,
-        classes =
-          [ Class
-              { className = "CIS-5000 Software Foundations",
-                editions =
-                  [ Markdown "[2025](https://www.seas.upenn.edu/~cis5000/current/)"
-                  ]
-              },
-            Class
-              { className = "CIS-5521 Compilers",
-                editions =
-                  [ Markdown "[2025](https://www.seas.upenn.edu/~cis5521/current/)"
-                  ]
-              }
-          ]
-      },
-    Teaching
-      { teachingRole = "Student Assistant",
-        teachingPeriod = Period (Year 2020) (Year 2023),
-        teachingInstitution = epfl,
-        classes =
-          [ Class
-              { className = "CS-550 Formal Verification",
-                editions =
-                  [ Markdown "[2022](https://gitlab.epfl.ch/lara/cs550/-/tree/2022)",
-                    Markdown "[2023](https://gitlab.epfl.ch/lara/cs550/-/tree/2023)"
-                  ]
-              },
-            Class
-              { className = "CS-320 Computer Language Processing",
-                editions = [Markdown "[2021](https://isa.epfl.ch/imoniteur_ISAP/!itffichecours.htm?ww_i_matiere=1887888591&ww_x_anneeAcad=2021-2022&ww_i_section=249847)"]
-              },
-            Class
-              { className = "CS-108 Practice of Object-Oriented Programming",
-                editions =
-                  [ Markdown "[2020](https://cs108.epfl.ch/archive/20/)",
-                    Markdown "[2021](https://cs108.epfl.ch/archive/21/)"
-                  ]
-              }
-          ]
-      }
+  [ Lecturer
+      "Lecturing"
+      [ ("Generalized Algebraic Datatypes", Class "Avanced Programming Paradigms" [Markdown "2026"], hessso),
+        ("What are Compilers and Interpreters?", Class "CIS-5521 Compilers" [Markdown "2025"], penn),
+        ("Linear Types", Class "CIS-6700 Advanced Topics in PL" [Markdown "2025"], penn)
+      ],
+    TA
+      "Teaching Assistant"
+      penn
+      [ Class
+          { className = "CIS-5000 Software Foundations",
+            editions =
+              [ Markdown "[2025](https://www.seas.upenn.edu/~cis5000/current/)"
+              ]
+          },
+        Class
+          { className = "CIS-5521 Compilers",
+            editions =
+              [ Markdown "[2025](https://www.seas.upenn.edu/~cis5521/current/)"
+              ]
+          }
+      ],
+    TA
+      "Student Assistant"
+      epfl
+      [ Class
+          { className = "CS-550 Formal Verification",
+            editions =
+              [ Markdown "[2022](https://gitlab.epfl.ch/lara/cs550/-/tree/2022)",
+                Markdown "[2023](https://gitlab.epfl.ch/lara/cs550/-/tree/2023)"
+              ]
+          },
+        Class
+          { className = "CS-320 Computer Language Processing",
+            editions = [Markdown "[2021](https://isa.epfl.ch/imoniteur_ISAP/!itffichecours.htm?ww_i_matiere=1887888591&ww_x_anneeAcad=2021-2022&ww_i_section=249847)"]
+          },
+        Class
+          { className = "CS-108 Practice of Object-Oriented Programming",
+            editions =
+              [ Markdown "[2020](https://cs108.epfl.ch/archive/20/)",
+                Markdown "[2021](https://cs108.epfl.ch/archive/21/)"
+              ]
+          }
+      ]
   ]
 
 projects :: [Project]
